@@ -1,0 +1,2 @@
+This project is dependent on the Simple-Websocket-Server which can be found here:
+[https://gitlab.com/eidheim/Simple-WebSocket-Server/-/blob/master/README.md](https://gitlab.com/eidheim/Simple-WebSocket-Server/-/tree/master)

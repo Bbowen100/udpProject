@@ -1,0 +1,12 @@
+Things to note:
+- Added a small delay in sendPacket to avoid overwhelming the network.
+
+- Work on retry logic that incorperates an ack signal aswell as exponential retry
+
+- Update udp server to handle different requests in dedicated thread
+
+- Look into using a streaming file format instead of wav and what type of audio player that would require
+
+- Look into creating web socket server in cpp to connect to a browser client
+
+- Stream audio from web socket server to the browser

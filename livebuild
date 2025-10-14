@@ -1,0 +1,24 @@
+#!/bin/bash
+#TODO: get first argument
+if [ $1 -eq 1 ]; then
+    echo "Starting UDP server"
+    nodemon --exec "g++ -o udp udp.cpp && ./udp" --ext cpp,h --signal SIGTERM \
+    exit 1
+elif [ $1 -eq 2 ]; then
+    echo "Starting UDP client"
+    nodemon --exec "g++ -o udpclient udpclient.cpp && ./udpclient" --ext cpp,h --signal SIGTERM \
+    exit 1
+elif [ $1 -eq 3 ]; then
+    echo "Starting audio"
+    nodemon --exec "g++ -o audio audio.cpp -I/portaudio/include -L/portaudio/lib -lportaudio && ./audio" --ext cpp,h --signal SIGTERM \
+    exit 1
+elif [ $1 -eq 4 ]; then
+    echo "Starting ws server"
+    nodemon --exec "g++ -I/home/brandon/udpproject/Simple-WebSocket-Server -I/usr/include/boost -I/usr/include/openssl -o server server.cpp -lboost_system -lssl -lcrypto -pthread && ./server" --ext cpp,h,hpp --signal SIGTERM \
+    exit 1
+elif [ $1 -eq 5 ]; then
+    echo "Starting ws server2"
+    nodemon --exec "g++ -I/home/brandon/udpproject/Simple-WebSocket-Server -I/usr/include/boost -I/usr/include/openssl -o server2 server2.cpp -lboost_system -lssl -lcrypto -pthread && ./server2" --ext cpp,h,hpp --signal SIGTERM \
+    exit 1
+fi
+

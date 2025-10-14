@@ -1,0 +1,10 @@
+# ignore files that start with pa_stable
+pa_stable*
+# ignore the directory named portaudio
+portaudio/
+
+SampleWav/
+
+.vscode/
+
+Simple-WebSocket-Server/

@@ -3,11 +3,11 @@ const ws = new WebSocket('ws://localhost:8081/echo/');
 var hlsUrl = ''; // URL of your HLS playlist
 const hls = new Hls({});
 
-ws.onopen = function() {
+ws.onopen = () => {
   console.log('WebSocket connection established');
 };
 
-ws.onmessage = function(event) {
+ws.onmessage = (event) => {
   console.log('Message received from server:', event.data);
   if (event.data === 'SOCKET_OPEN') {
     ws.send('REQUEST_HLS_URL');
@@ -25,11 +25,11 @@ ws.onmessage = function(event) {
   }
 };
 
-ws.onclose = function() {
+ws.onclose = () => {
   console.log('WebSocket connection closed');
 };
 
-ws.onerror = function(error) {
+ws.onerror = (error) => {
   console.error('WebSocket error:', error);
 };
 
@@ -66,3 +66,56 @@ if (Hls.isSupported()) {
 } else {
   alert('HLS not supported in this browser.');
 }
+
+let mediaRecorder;
+let recordingInterval;
+function startRecording() {
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        document.getElementById('updates').innerText = 'Recording started';
+        
+
+        // get audio chunks every second
+        recordingInterval = setInterval(() => {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            data = mediaRecorder.requestData();
+            console.log('Audio data chunk requested', data);
+          }
+        }, 1000);
+
+        mediaRecorder.onstop = function() {
+          document.getElementById('updates').innerText = 'Recording stopped';
+        };
+
+      })
+      .catch(function(err) {
+        console.error('The following error occurred: ' + err);
+      });
+  } else {
+    console.error('getUserMedia not supported on your browser!');
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+    clearInterval(recordingInterval);
+    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    mediaRecorder = null;
+  }
+}
+function toggleRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+document.getElementById('recording-icon').addEventListener('click', () => {
+  document.getElementById('recording-icon').classList.toggle('record-animate');
+  toggleRecording();
+});

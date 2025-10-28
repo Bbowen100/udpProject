@@ -208,12 +208,14 @@ int main() {
     // WebSocketServer server;
 
     // WebSocket (WS)-server at port 8080 using 1 thread
-      
+    std::signal(SIGINT, [](int signum) {
+      std::ofstream stream_output(outputFile);
+      stream_output << "";
+      stream_output.close();
+    });
+    
     run_server();
     // delete contents of a stream_output.m3u8
-    std::ofstream stream_output(outputFile);
-    stream_output << "";
-    stream_output.close();
 
     return 0;
 }

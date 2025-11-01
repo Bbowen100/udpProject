@@ -13,20 +13,37 @@ using WsServer = SimpleWeb::SocketServer<SimpleWeb::WS>;
 static std::mutex connections_mtx;
 static std::set<std::shared_ptr<WsServer::Connection>> connections;
 
-int sendData(shared_ptr<WsServer::Connection> connection, string data){
+int sendData(shared_ptr<WsServer::Connection> connection, std::string data, unsigned char opcode = 129) {
     std::cout << "Sending using sendPacket " << std::endl;
     // connection->send is an asynchronous function
+    auto out_message = std::make_shared<WsServer::OutMessage>();
+    // out_message->write(data.c_str(), data.size());
+    connection->send(out_message, [](const SimpleWeb::error_code &ec) {
+        if(ec) {
+            std::cout << "Server: Error sending message. " <<
+                // See http://www.boost.org/doc/libs/1_55_0/doc/html/boost_asio/reference.html, Error Codes for error code meanings
+                "Error: " << ec << ", error message: " << ec.message() << std::endl;
+        }
+  }, opcode);
+  return sizeof(data);
+}
+
+int sendBinaryData(shared_ptr<WsServer::Connection> connection, std::shared_ptr<WsServer::OutMessage> &data, unsigned char opcode = 129) {
+    std::cout << "Sending using sendPacket " << std::endl;
+    // connection->send is an asynchronous function
+    // auto out_message = std::make_shared<WsServer::OutMessage>();
+    // out_message->write(data.c_str(), data.size());
     connection->send(data, [](const SimpleWeb::error_code &ec) {
         if(ec) {
             std::cout << "Server: Error sending message. " <<
                 // See http://www.boost.org/doc/libs/1_55_0/doc/html/boost_asio/reference.html, Error Codes for error code meanings
                 "Error: " << ec << ", error message: " << ec.message() << std::endl;
         }
-  });
+  }, opcode);
   return sizeof(data);
 }
 
-void broadcast(const std::string& msg, shared_ptr<WsServer::Connection> curr_connection, bool include_self = false) {
+void broadcast_binary(std::shared_ptr<WsServer::OutMessage> msg, shared_ptr<WsServer::Connection> curr_connection, bool include_self = false, unsigned char opcode = 129) {
     std::vector<std::shared_ptr<WsServer::Connection>> conn_pool;
     {
         std::lock_guard<std::mutex> lock(connections_mtx);
@@ -36,7 +53,23 @@ void broadcast(const std::string& msg, shared_ptr<WsServer::Connection> curr_con
       if (!include_self && conn == curr_connection) {
           continue;
       }else{
-          sendData(conn, msg);
+          sendBinaryData(conn, msg, opcode);
+      }
+    }
+    
+}
+
+void broadcast(std::string msg, shared_ptr<WsServer::Connection> curr_connection, bool include_self = false, unsigned char opcode = 129) {
+    std::vector<std::shared_ptr<WsServer::Connection>> conn_pool;
+    {
+        std::lock_guard<std::mutex> lock(connections_mtx);
+        conn_pool.assign(connections.begin(), connections.end());
+    }
+    for (auto &conn : conn_pool) {
+      if (!include_self && conn == curr_connection) {
+          continue;
+      }else{
+          sendData(conn, msg, opcode);
       }
     }
     
@@ -55,10 +88,28 @@ int run_server(){
   auto &echo = server.endpoint["^/echo/?$"];
 
   echo.on_message = [](shared_ptr<WsServer::Connection> connection, shared_ptr<WsServer::InMessage> in_message) {
-    std::string out_message = in_message->string();
-    cout << "Server: Message received from " << connection.get() << std::endl;
-    broadcast(out_message, connection);
-    // sendData(connection, "SOCKET_OPEN");
+    if ((in_message->fin_rsv_opcode & 0x0f) == 2) {
+        // Close frame received, ignore the message
+        // in_message->binary(); // Consume the message to clear the stream
+        std::shared_ptr<WsServer::OutMessage> binary_data = std::make_shared<WsServer::OutMessage>();
+        // *binary_data << in_message->string();
+        // write in_message data to binary_data
+        char buffer[8192];
+         std::size_t bytes_read;
+         std::streambuf *in_buf = in_message->rdbuf();
+         while ((bytes_read = in_buf->sgetn(buffer, sizeof(buffer))) > 0) {
+             binary_data->write(buffer, bytes_read);
+         }
+        // binary_data->write(asio::buffers_begin(in_message->rdbuf()), asio::buffers_size(in_message->rdbuf()));
+
+        std::cout << "Server: Binary message received from " << connection.get() << ", size: " << binary_data->size() << " bytes" << std::endl;
+        broadcast_binary(binary_data, connection, false, 130); // opcode 130 for binary
+    }else{
+      std::string out_message = in_message->string();
+      cout << "Server: Message received from " << connection.get() << std::endl;
+      broadcast(out_message, connection);
+      // sendData(connection, "SOCKET_OPEN");
+    }
     
   };
 

@@ -7,6 +7,28 @@ Things to note:
 
 - Look into using a streaming file format instead of wav and what type of audio player that would require
 
-- Look into creating web socket server in cpp to connect to a browser client
+- Look into creating web socket server in cpp to connect to a browser client (completed)
 
-- Stream audio from web socket server to the browser
+- Stream audio from web socket server to the browser (completed)
+
+- Add REST endpoints to web socket server for 
+    <!-- what other metrics should I add -->
+    - current number of connections
+    - total connections opened
+    - total connections closed
+    - last broadcast turn around time
+    - average broadcast turn around time
+    - last cpu utilization during broadcast
+    - average cpu utilization during broadcast
+    - last memory utilization during broadcast
+    - average memory utilization during broadcast
+    - total messages recieved
+    - total messages sent
+    - total bytes sent
+    - total bytes recieved
+    - total threads created
+    - current number of threads
+
+- Create MCP server for gemini
+
+- Create gemini tool that calls MCP server

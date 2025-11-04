@@ -18,10 +18,7 @@ const MimeTypes = [
 
 var audioB64Buffer = [];
 var audioBuffer = [];
-let playingTimer;
 let play_status = false;
-let recordingInterval;
-let playingInterval;
 
 let mediaRecorder;
 let stream;
@@ -55,7 +52,6 @@ ws.onerror = (error) => {
   console.error('WebSocket error:', error);
 };
 
-const video = document.getElementById('video');
 
 function getSupportedMimeType() {
   for (const type of MimeTypes) {
@@ -67,10 +63,9 @@ function getSupportedMimeType() {
   return null;
 }
 
-async function init() {
+(async function init() {
   stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-}
-
+})();
 
 function startRecording() {
   
@@ -98,7 +93,6 @@ function startRecording() {
 function stopRecording() {
   if (mediaRecorder) {
     mediaRecorder.stop();
-    clearInterval(recordingInterval);
     mediaRecorder.stream.getTracks().forEach(track => track.stop());
     mediaRecorder = null;
   }
@@ -181,5 +175,3 @@ document.getElementById('recording-icon').addEventListener('click', () => {
   document.getElementById('recording-icon').classList.toggle('record-animate');
   toggleRecording();
 });
-
-init();

@@ -5,6 +5,7 @@
 #include <set>
 #include "server_ws.hpp"
 #include "audio.h"
+#include "rest_api.hpp"
 
 using namespace SimpleWeb;
 using namespace std;
@@ -69,11 +70,11 @@ void broadcast(std::string msg, shared_ptr<WsServer::Connection> curr_connection
       if (!include_self && conn == curr_connection) {
           continue;
       }else{
-          sendData(conn, msg, opcode);
+          sendData(conn, msg, opcode); 
       }
     }
-    
-}
+     
+} 
 
 int run_server(){
   WsServer server;
@@ -183,8 +184,11 @@ int main() {
     });
 
     // WebSocket (WS)-server at port 8080 using 1 thread
-      
+    // Initialize TinyAPI in a different thread to avoid blocking
+    std::thread tinyapi_thread(initTinyAPI);
+    tinyapi_thread.detach();
     run_server();
+    
 
     return 0;
 }

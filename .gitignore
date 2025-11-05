@@ -8,3 +8,6 @@ SampleWav/
 .vscode/
 
 Simple-WebSocket-Server/
+
+mcp/.env
+mcp/node_modules/

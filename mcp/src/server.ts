@@ -1,40 +1,65 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+// import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import express from 'express';
 
-import { SERVER_CONFIG } from "./config";
+import { SERVER_CONFIG } from "./config.ts";
 import {
   AUDIO_STATS_TOOL,
   audioStatsHandler,
  
-} from "./tools";
+} from "./tools/index.ts";
 
 // Create MCP server
-export function createServer() {
+export async function startServer() {
   const server = new Server(
     {
       name: SERVER_CONFIG.name,
       version: SERVER_CONFIG.version,
     },
     {
-      capabilities: {
-        tools: {
-          tools: [AUDIO_STATS_TOOL],
-        },
-      },
+        capabilities: {
+          resources: {},
+          tools: {}
+        }
     }
   );
 
-  // Register tool listing handler
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [AUDIO_STATS_TOOL],
-  }));
+  // server.registerTool(
+  //   AUDIO_STATS_TOOL.title,
+  //   AUDIO_STATS_TOOL,
+  //   // wrapper to match expected signature: (args, extra) => Response | Promise<Response>
+  //   async (args: any, extra?: any) => {
+  //     const res = await audioStatsHandler();
+  //     // normalize content items so "type" is the literal "text" (not a generic string)
+  //     console.log("Audio Stats Tool Handler called returns:",res);
+  //     const content = (res.content || []).map((c: any) => {
+  //       if (c && c.type === "text") {
+  //         return { ...c, type: "text" as const };
+  //       }
+  //       return c;
+  //     });
+  //     return { ...(res as any), content };
+  //   }
+  // );
 
-  // Register tool call handler
+  // Register tool listing handler
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    console.error("Received ListToolsRequest");
+    return {
+      tools: [AUDIO_STATS_TOOL],
+    };
+  });
+
+  // {"jsonrpc": "2.0", "id": 1,"method": "tools/call","params": {"tool": "audio_stats_tool","name":"audio_stats_tool","arguments": {"count": 10,"offset": 0,"query": "Hello, MCP server!","message": "Give me the latest audio server statistics."}}}
+
+  // // Register tool call handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    // console.log("Received CallToolRequest:", JSON.stringify(request, null, 2));
     try {
       const { name, arguments: args } = request.params;
 
@@ -43,8 +68,8 @@ export function createServer() {
       }
 
       switch (name) {
-        case "audio_stats":
-          return await audioStatsHandler(args);
+        case "audio_stats_tool":
+          return await audioStatsHandler();
 
         default:
           return {
@@ -67,13 +92,11 @@ export function createServer() {
     }
   });
 
-  return server;
-}
-
-// Start server with stdio transport
-export async function startServer() {
-  const server = createServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Audio Stats MCP Server running on stdio");
 }
+
+// curl -X POST http://localhost:4000/ \
+// -H "Content-Type: application/json" \
+// -H "Accept: text/event-stream, application/json" \
+// -d '{"jsonrpc": "2.0", "id": 1,"method": "tools/call","params": {"tool": "audio_stats_tool","name":"audio_stats_tool","arguments": {"count": 10,"offset": 0,"query": "Hello, MCP server!","message": "Give me the latest audio server statistics."}}}'

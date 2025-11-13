@@ -13,22 +13,40 @@ Things to note:
 
 - Add REST endpoints to web socket server for 
     <!-- what other metrics should I add -->
-    - current number of connections
-    - total connections opened
-    - total connections closed
-    - last broadcast turn around time
-    - average broadcast turn around time
+    - current number of connections (completed)
+    - total connections opened (completed)
+    - total connections closed (completed)
+    - last broadcast turn around time (completed)
+    - average broadcast turn around time (completed)
     - last cpu utilization during broadcast
     - average cpu utilization during broadcast
     - last memory utilization during broadcast
     - average memory utilization during broadcast
-    - total messages recieved
-    - total messages sent
+    - total messages recieved (completed)
+    - total messages sent (completed)
     - total bytes sent
     - total bytes recieved
     - total threads created
     - current number of threads
 
-- Create MCP server for gemini
+- Create MCP server for gemini (completed)
 
-- Create gemini tool that calls MCP server
+- Create gemini tool that calls MCP server (completed)
+
+To make your audio relay server project more technical and advanced, 
+consider adding features such as 
+- adaptive bitrate streaming for optimizing audio quality across different network conditions, 
+- real-time audio transcoding with support for multiple audio codecs and formats, 
+- and implementing load balancing to handle multiple connections efficiently. 
+You can also enhance your MCP integration by optimizing the 
+- data flow to ensure agents only fetch essential data fields, improving response times and reducing 
+resource usage. 
+- Integrating sophisticated monitoring and alerting systems for server and network health, 
+- as well as automated anomaly detection and self-healing capabilities, will also increase technical robustness.
+
+Moreover, incorporating AI-driven features like 
+- predictive analytics for traffic and quality management, 
+- and implementing security protocols for encryption and authentication in real-time communication, 
+can make your project substantially more technical and production-ready. You might also explore the 
+- use of advanced protocols such as WebRTC for low-latency streaming, 
+- and containerization or orchestration technologies (e.g., Docker, Kubernetes) for scalable deployment.

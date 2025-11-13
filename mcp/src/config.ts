@@ -2,6 +2,7 @@
 export const SERVER_CONFIG = {
   name: "mcp",
   version: "1.0.0",
+  port: 4000
 };
 
 // Check for API key at startup

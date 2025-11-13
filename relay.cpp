@@ -1,18 +1,68 @@
-#include <future>
 #include <pthread.h>
 #include <iostream>
 #include <fstream>
 #include <set>
+#include <mutex>
+
 #include "server_ws.hpp"
 #include "audio.h"
-#include "rest_api.hpp"
+#include "rest_api.cpp"
 
 using namespace SimpleWeb;
 using namespace std;
 using WsServer = SimpleWeb::SocketServer<SimpleWeb::WS>;
 
-static std::mutex connections_mtx;
-static std::set<std::shared_ptr<WsServer::Connection>> connections;
+std::mutex connections_mtx;
+std::set<std::shared_ptr<WsServer::Connection>> connections;
+
+std::mutex connections_open_mtx;
+int connections_open;
+
+std::mutex connections_closed_mtx;
+int connections_closed;
+
+std::mutex last_broadcast_turn_around_time_mtx;
+long last_broadcast_turn_around_time;
+
+std::mutex total_broadcast_turn_around_time_mtx;
+long total_broadcast_turn_around_time;
+
+std::mutex count_broadcast_turn_around_time_mtx;
+long count_broadcast_turn_around_time;
+
+std::mutex last_cpu_utilization_during_broadcast_mtx;
+double last_cpu_utilization_during_broadcast;
+
+std::mutex average_cpu_utilization_during_broadcast_mtx;
+double average_cpu_utilization_during_broadcast;
+
+std::mutex last_memory_utilization_during_broadcast_mtx;
+double last_memory_utilization_during_broadcast;
+
+std::mutex average_memory_utilization_during_broadcast_mtx;
+double average_memory_utilization_during_broadcast;
+
+std::mutex total_messages_recieved_mtx;
+long total_messages_recieved;
+
+std::mutex total_messages_sent_mtx;
+long total_messages_sent;
+
+std::mutex total_bytes_sent_mtx;
+long total_bytes_sent;
+
+std::mutex total_bytes_recieved_mtx;
+long total_bytes_recieved;
+
+std::mutex total_threads_created_mtx;
+int total_threads_created;
+
+std::mutex current_number_of_threads_mtx;
+int current_number_of_threads;
+
+std::chrono::_V2::system_clock::time_point start_time;
+std::chrono::_V2::system_clock::time_point end_time;
+
 
 int sendData(shared_ptr<WsServer::Connection> connection, std::string data, unsigned char opcode = 129) {
     std::cout << "Sending using sendPacket " << std::endl;
@@ -54,10 +104,22 @@ void broadcast_binary(std::shared_ptr<WsServer::OutMessage> msg, shared_ptr<WsSe
       if (!include_self && conn == curr_connection) {
           continue;
       }else{
-          sendBinaryData(conn, msg, opcode);
+        { 
+          std::lock_guard<std::mutex> lock(total_messages_sent_mtx);
+          total_messages_sent++;
+        }
+        sendBinaryData(conn, msg, opcode);
       }
     }
-    
+    end_time = std::chrono::high_resolution_clock::now();
+    {
+        std::lock_guard<std::mutex> lock(last_broadcast_turn_around_time_mtx);
+        last_broadcast_turn_around_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+        std::lock_guard<std::mutex> lock2(total_broadcast_turn_around_time_mtx);
+        total_broadcast_turn_around_time += last_broadcast_turn_around_time;
+        std::lock_guard<std::mutex> lock3(count_broadcast_turn_around_time_mtx);
+        count_broadcast_turn_around_time++;
+    }
 }
 
 void broadcast(std::string msg, shared_ptr<WsServer::Connection> curr_connection, bool include_self = false, unsigned char opcode = 129) {
@@ -89,6 +151,13 @@ int run_server(){
   auto &echo = server.endpoint["^/echo/?$"];
 
   echo.on_message = [](shared_ptr<WsServer::Connection> connection, shared_ptr<WsServer::InMessage> in_message) {
+    //start a timer to measure how long it takes to process the message
+    start_time = std::chrono::high_resolution_clock::now();
+    {
+        std::lock_guard<std::mutex> lock(total_messages_recieved_mtx);
+        total_messages_recieved++;
+    }
+    
     if ((in_message->fin_rsv_opcode & 0x0f) == 2) {
         // Close frame received, ignore the message
         // in_message->binary(); // Consume the message to clear the stream
@@ -126,6 +195,8 @@ int run_server(){
     {
         std::lock_guard<std::mutex> lock(connections_mtx);
         connections.insert(connection);
+        std::lock_guard<std::mutex> lock2(connections_open_mtx);
+        connections_open++;
     }
     
     sendData(connection, "SOCKET_OPEN");
@@ -137,6 +208,8 @@ int run_server(){
     {
         std::lock_guard<std::mutex> lock(connections_mtx);
         connections.erase(connection);
+        std::lock_guard<std::mutex> lock3(connections_closed_mtx);
+        connections_closed++;
     }
     sendData(connection, "SOCKET_CLOSED");
   };

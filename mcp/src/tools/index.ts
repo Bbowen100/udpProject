@@ -1,2 +1,2 @@
-export { AUDIO_STATS_TOOL } from "./definitions";
-export { audioStatsHandler } from "./handlers";
+export { AUDIO_STATS_TOOL } from "./definitions.ts";
+export { audioStatsHandler } from "./handlers.ts";

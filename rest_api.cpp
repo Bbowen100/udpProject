@@ -12,7 +12,6 @@ std::tuple<std::string, std::string> getstats(RequestContext request_context) {
   double last_cpu_utilization_during_broadcast = getLastCpuUtilizationDuringBroadcast();
   double average_cpu_utilization_during_broadcast = getAverageCpuUtilizationDuringBroadcast();
   double last_memory_utilization_during_broadcast = getLastMemoryUtilizationDuringBroadcast();
-  double average_memory_utilization_during_broadcast = getAverageMemoryUtilizationDuringBroadcast();
   long total_messages_recieved = getTotalMessagesRecieved();
   long total_messages_sent = getTotalMessagesSent();
   long total_bytes_sent = getTotalBytesSent();
@@ -30,7 +29,6 @@ std::tuple<std::string, std::string> getstats(RequestContext request_context) {
   response += "Last CPU Utilization During Broadcast: " + std::to_string(last_cpu_utilization_during_broadcast) + "%\n";
   response += "Average CPU Utilization During Broadcast: " + std::to_string(average_cpu_utilization_during_broadcast) + "%\n";
   response += "Last Memory Utilization During Broadcast: " + std::to_string(last_memory_utilization_during_broadcast) + "MB\n";
-  response += "Average Memory Utilization During Broadcast: " + std::to_string(average_memory_utilization_during_broadcast) + "MB\n";
   response += "Total Messages Recieved: " + std::to_string(total_messages_recieved) + "\n";
   response += "Total Messages Sent: " + std::to_string(total_messages_sent) + "\n";
   response += "Total Bytes Sent: " + std::to_string(total_bytes_sent) + " bytes\n";
@@ -47,11 +45,12 @@ std::tuple<std::string, std::string> getstats(RequestContext request_context) {
 
 int initTinyAPI() {
   // Quickly setting up a basic (HTTP/1.1) REST Api at device's localhost
-  std::cout << "Initializing TinyAPI..." << std::endl;
+  const int TinyAPIPort = 8000;
+  std::cout << "Initializing TinyAPI on port " << TinyAPIPort << std::endl;
   std::string localhost = "127.0.0.1";
   size_t timeout = 1450000; // 14.5s
   TinyAPI *new_api =
-      new TinyAPI(8000, 1024, 5, localhost, timeout);
+      new TinyAPI(TinyAPIPort, 1024, 5, localhost, timeout);
   if (new_api->initialize_server() == 1) {
     return 1;
   }

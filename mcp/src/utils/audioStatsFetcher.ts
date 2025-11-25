@@ -5,17 +5,15 @@ export interface AudioStats {
   audioQuality: string;
 }
 
-export async function fetchAudioStats(): Promise<AudioStats> {
+export async function fetchAudioStats() {
   // Simulate an HTTP request to fetch audio stats
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        openConnections: 120,
-        activeUsers: 85,
-        audioQuality: "Good",
-      });
-    }, 1000);
-  });
+  // fetch with get request to localhost:4000
+  const url = 'http://localhost:8000';
+  const response = await fetch(url);
+  console.error("results fetched response from the server: ", response);
+  const data = await response.text();
+  console.error("results fetched from the server: ", data);
+  return data;
 }
 
 

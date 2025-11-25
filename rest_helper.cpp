@@ -2,6 +2,14 @@
 #include <set>
 #include <mutex>
 #include "server_ws.hpp"
+#include <sys/resource.h>
+
+struct BinaryDataQueueItem {
+    std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::OutMessage> data;
+    std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::Connection> connection;
+    bool include_self;
+    unsigned char opcode;
+};
 
 extern std::mutex connections_mtx;
 extern std::set<std::shared_ptr<SimpleWeb::SocketServer<SimpleWeb::WS>::Connection>> connections;
@@ -108,17 +116,9 @@ double getAverageCpuUtilizationDuringBroadcast() {
 }
 
 double getLastMemoryUtilizationDuringBroadcast() {
-    {
-        std::lock_guard<std::mutex> lock(last_memory_utilization_during_broadcast_mtx);
-        return last_memory_utilization_during_broadcast;
-    }
-}
-
-double getAverageMemoryUtilizationDuringBroadcast() {
-    {
-        std::lock_guard<std::mutex> lock(average_memory_utilization_during_broadcast_mtx);
-        return average_memory_utilization_during_broadcast;
-    }
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    return static_cast<double>(usage.ru_maxrss)/1024; // Convert to MB
 }
 
 long getTotalMessagesRecieved() {

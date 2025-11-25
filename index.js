@@ -1,5 +1,6 @@
 // connect to ws socket on localhost:8081
 const ws = new WebSocket('ws://localhost:8081/echo/');
+const RecordingRate = 30;
 var hlsUrl = ''; // URL of your HLS playlist
 const hls = new Hls({});
 
@@ -38,28 +39,28 @@ const video = document.getElementById('video');
 if (Hls.isSupported()) {
 
   hls.attachMedia(video);
-  hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+  hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
     console.log('Manifest loaded, found ' + data.levels.length + ' quality level(s)');
     video.play();
   });
 
-  hls.on(Hls.Events.LEVEL_LOADED, function(event, data) {
+  hls.on(Hls.Events.LEVEL_LOADED, function (event, data) {
     console.log('Playlist updated with new segments, sliding window sequence:', data.details.mediaSequence);
   });
 
-  hls.on(Hls.Events.BUFFER_APPENDED, (eventName, {frag}) =>{
-    console.log('Buffer appended', eventName, {frag});
+  hls.on(Hls.Events.BUFFER_APPENDED, (eventName, { frag }) => {
+    console.log('Buffer appended', eventName, { frag });
     if (frag.type === 'main' && frag.sn !== 'initSegment' && frag.elementaryStreams.video) {
-    const { start, startDTS, startPTS, maxStartPTS, elementaryStreams } = frag;
-    tOffset = elementaryStreams.video.startPTS - start;
-    hls.off(Hls.Events.BUFFER_APPENDED, getAppendedOffset);
-    console.log('video timestamp offset:', tOffset, { start, startDTS, startPTS, maxStartPTS, elementaryStreams });
-  }
+      const { start, startDTS, startPTS, maxStartPTS, elementaryStreams } = frag;
+      tOffset = elementaryStreams.video.startPTS - start;
+      hls.off(Hls.Events.BUFFER_APPENDED, getAppendedOffset);
+      console.log('video timestamp offset:', tOffset, { start, startDTS, startPTS, maxStartPTS, elementaryStreams });
+    }
   });
 
 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
   // Native HLS support (e.g., Safari)
-  video.addEventListener('loadedmetadata', function() {
+  video.addEventListener('loadedmetadata', function () {
     console.log('Metadata loaded but hls not supported natively');
     // video.play();
   });
@@ -72,11 +73,11 @@ let recordingInterval;
 function startRecording() {
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(function(stream) {
+      .then(function (stream) {
         mediaRecorder = new MediaRecorder(stream);
         mediaRecorder.start();
         document.getElementById('updates').innerText = 'Recording started';
-        
+
 
         // get audio chunks every second
         recordingInterval = setInterval(() => {
@@ -84,14 +85,14 @@ function startRecording() {
             data = mediaRecorder.requestData();
             console.log('Audio data chunk requested', data);
           }
-        }, 1000);
+        }, RecordingRate);
 
-        mediaRecorder.onstop = function() {
+        mediaRecorder.onstop = function () {
           document.getElementById('updates').innerText = 'Recording stopped';
         };
 
       })
-      .catch(function(err) {
+      .catch(function (err) {
         console.error('The following error occurred: ' + err);
       });
   } else {

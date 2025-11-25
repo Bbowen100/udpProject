@@ -11,3 +11,7 @@ Simple-WebSocket-Server/
 
 mcp/.env
 mcp/node_modules/
+
+node_modules/
+webrtc/node_modules/
+webrtc/coturn/

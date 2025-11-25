@@ -39,9 +39,6 @@ double average_cpu_utilization_during_broadcast;
 std::mutex last_memory_utilization_during_broadcast_mtx;
 double last_memory_utilization_during_broadcast;
 
-std::mutex average_memory_utilization_during_broadcast_mtx;
-double average_memory_utilization_during_broadcast;
-
 std::mutex total_messages_recieved_mtx;
 long total_messages_recieved;
 
@@ -60,8 +57,21 @@ int total_threads_created;
 std::mutex current_number_of_threads_mtx;
 int current_number_of_threads;
 
+std::mutex binary_data_processing_queue_mtx;
+std::vector<BinaryDataQueueItem> binary_data_processing_queue;
+
 std::chrono::_V2::system_clock::time_point start_time;
 std::chrono::_V2::system_clock::time_point end_time;
+
+void queuebinarydataforprocessing(std::shared_ptr<WsServer::OutMessage> &data, shared_ptr<WsServer::Connection> connection, bool include_self = false, unsigned char opcode = 129) {
+    std::lock_guard<std::mutex> lock(binary_data_processing_queue_mtx);
+    BinaryDataQueueItem item;
+    item.data = data;
+    item.connection = connection;
+    item.include_self = include_self;
+    item.opcode = opcode;
+    binary_data_processing_queue.push_back(item);
+}
 
 
 int sendData(shared_ptr<WsServer::Connection> connection, std::string data, unsigned char opcode = 129) {
@@ -80,7 +90,7 @@ int sendData(shared_ptr<WsServer::Connection> connection, std::string data, unsi
 }
 
 int sendBinaryData(shared_ptr<WsServer::Connection> connection, std::shared_ptr<WsServer::OutMessage> &data, unsigned char opcode = 129) {
-    std::cout << "Sending using sendPacket " << std::endl;
+    std::cout << "Sending using sendBinaryData " << std::endl;
     // connection->send is an asynchronous function
     // auto out_message = std::make_shared<WsServer::OutMessage>();
     // out_message->write(data.c_str(), data.size());
@@ -106,6 +116,8 @@ void broadcast_binary(std::shared_ptr<WsServer::OutMessage> msg, shared_ptr<WsSe
       }else{
         { 
           std::lock_guard<std::mutex> lock(total_messages_sent_mtx);
+          std::lock_guard<std::mutex> lock2(total_bytes_sent_mtx);
+          total_bytes_sent += sizeof(msg->rdbuf());
           total_messages_sent++;
         }
         sendBinaryData(conn, msg, opcode);
@@ -120,6 +132,23 @@ void broadcast_binary(std::shared_ptr<WsServer::OutMessage> msg, shared_ptr<WsSe
         std::lock_guard<std::mutex> lock3(count_broadcast_turn_around_time_mtx);
         count_broadcast_turn_around_time++;
     }
+}
+
+void processBinaryDataQueue() {
+  std::cout << "Binary data processing thread started." << std::endl;
+  while (true) {
+      BinaryDataQueueItem item;
+      {
+          std::lock_guard<std::mutex> lock(binary_data_processing_queue_mtx);
+          if (!binary_data_processing_queue.empty()) {
+              item = binary_data_processing_queue.front();
+              binary_data_processing_queue.erase(binary_data_processing_queue.begin());
+          } else {
+              continue; // No items to process
+          }
+      }
+      broadcast_binary(item.data, item.connection, item.include_self, item.opcode);
+  }
 }
 
 void broadcast(std::string msg, shared_ptr<WsServer::Connection> curr_connection, bool include_self = false, unsigned char opcode = 129) {
@@ -138,9 +167,13 @@ void broadcast(std::string msg, shared_ptr<WsServer::Connection> curr_connection
      
 } 
 
+#define SERVER_PORT 8081
+#define SERVER_THREADS 4
+
 int run_server(){
   WsServer server;
-  server.config.port = 8081;
+  server.config.port = SERVER_PORT;
+  server.config.thread_pool_size = SERVER_THREADS;
 
   // Example 1: echo WebSocket endpoint
   // Added debug messages for example use of the callbacks
@@ -155,6 +188,8 @@ int run_server(){
     start_time = std::chrono::high_resolution_clock::now();
     {
         std::lock_guard<std::mutex> lock(total_messages_recieved_mtx);
+        std::lock_guard<std::mutex> lock2(total_bytes_recieved_mtx);
+        total_bytes_recieved += sizeof(in_message->rdbuf());
         total_messages_recieved++;
     }
     
@@ -173,7 +208,8 @@ int run_server(){
         // binary_data->write(asio::buffers_begin(in_message->rdbuf()), asio::buffers_size(in_message->rdbuf()));
 
         std::cout << "Server: Binary message received from " << connection.get() << ", size: " << binary_data->size() << " bytes" << std::endl;
-        broadcast_binary(binary_data, connection, false, 130); // opcode 130 for binary
+        queuebinarydataforprocessing(binary_data, connection, false, 130);
+        
     }else{
       std::string out_message = in_message->string();
       cout << "Server: Message received from " << connection.get() << std::endl;
@@ -260,6 +296,8 @@ int main() {
     // Initialize TinyAPI in a different thread to avoid blocking
     std::thread tinyapi_thread(initTinyAPI);
     tinyapi_thread.detach();
+    std::thread binary_data_processing_thread(processBinaryDataQueue);
+    binary_data_processing_thread.detach();
     run_server();
     
 

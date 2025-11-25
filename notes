@@ -20,12 +20,11 @@ Things to note:
     - average broadcast turn around time (completed)
     - last cpu utilization during broadcast
     - average cpu utilization during broadcast
-    - last memory utilization during broadcast
-    - average memory utilization during broadcast
+    - last memory utilization during broadcast (completed)
     - total messages recieved (completed)
     - total messages sent (completed)
-    - total bytes sent
-    - total bytes recieved
+    - total bytes sent (completed)
+    - total bytes recieved (completed)
     - total threads created
     - current number of threads
 

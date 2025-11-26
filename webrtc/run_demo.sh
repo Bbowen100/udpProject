@@ -7,7 +7,7 @@ sleep 1
 
 # Start Coturn
 echo "Starting Coturn..."
-./run_coturn.sh &
+./run_coturn.sh > coturn.log 2>&1 &
 COTURN_PID=$!
 
 # Start Signaling Server
@@ -20,8 +20,7 @@ SERVER_PID=$!
 
 # Start HTTP Server
 echo "Starting HTTP Server on port 8000..."
-echo "Open http://localhost:8000 in two tabs to test."
-npx live-server --port=8000 --entry-file=index.html
+python3 -m http.server 8000
 
 # Cleanup on exit
 kill $COTURN_PID

@@ -1,0 +1,331 @@
+0: (8100): INFO: Listener address to use: 172.18.25.146
+0: (8100): INFO: log file opened: /var/tmp/turn_8100_2025-11-25.log
+0: (8100): INFO: Relay address to use: 172.18.25.146
+0: (8100): INFO: System cpu num is 12
+0: (8100): INFO: System enable num is 12
+0: (8100): INFO: Configured cpu num is 12
+0: (8100): INFO: Coturn Version Coturn-4.7.0 'Gorst'
+0: (8100): INFO: Max number of open files/sockets allowed for this process: 1048576
+0: (8100): INFO: Due to the open files/sockets limitation, max supported number of TURN Sessions possible is: 524000 (approximately)
+0: (8100): INFO: 
+
+==== Show him the instruments, Practical Frost: ====
+
+0: (8100): INFO: OpenSSL compile-time version: OpenSSL 1.1.1f  31 Mar 2020 (0x1010106f)
+0: (8100): INFO: TLS 1.2 supported
+0: (8100): INFO: TLS 1.3 supported
+0: (8100): INFO: DTLS 1.2 supported
+0: (8100): INFO: TURN/STUN ALPN supported
+0: (8100): INFO: Third-party authorization (oAuth) supported
+0: (8100): INFO: GCM (AEAD) supported
+0: (8100): INFO: SQLite supported, default database location is /usr/local/var/db/turndb
+0: (8100): INFO: Redis is not supported
+0: (8100): INFO: PostgreSQL is not supported
+0: (8100): INFO: MySQL is not supported
+0: (8100): INFO: MongoDB is not supported
+0: (8100): INFO: Default Net Engine version: 3 (UDP thread per CPU core)
+0: (8100): INFO: Domain name: localdomain
+0: (8100): INFO: Default realm: 172.18.25.146
+0: (8100): WARNING: cannot find certificate file: turn_server_cert.pem (1)
+0: (8100): WARNING: cannot start TLS and DTLS listeners because certificate file is not set properly
+0: (8100): WARNING: cannot find private key file: turn_server_pkey.pem (1)
+0: (8100): WARNING: cannot start TLS and DTLS listeners because private key file is not set properly
+0: (8100): INFO: Certificate file found: /home/brandon/udpproject/webrtc/turn_server_cert.pem
+0: (8100): INFO: Private key file found: /home/brandon/udpproject/webrtc/turn_server_pkey.pem
+0: (8100): WARNING: Cannot create pid file: /var/run/turnserver.pid
+0: (8100): INFO: pid file created: /var/tmp/turnserver.pid
+0: (8100): INFO: IO method: epoll (with changelist)
+0: (8100): INFO: RFC5780 disabled! /NAT behavior discovery/
+0: (8100): INFO: Wait for relay ports initialization...
+0: (8100): INFO:   relay 172.18.25.146 initialization...
+0: (8100): INFO:   relay 172.18.25.146 initialization done
+0: (8100): INFO: Relay ports initialization done
+0: (8102): DEBUG: turn server id=0 created
+0: (8102): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8103): DEBUG: turn server id=1 created
+0: (8103): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8104): DEBUG: turn server id=2 created
+0: (8105): DEBUG: turn server id=3 created
+0: (8104): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8105): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8106): DEBUG: turn server id=4 created
+0: (8106): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8107): DEBUG: turn server id=5 created
+0: (8107): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8108): DEBUG: turn server id=6 created
+0: (8108): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8109): DEBUG: turn server id=7 created
+0: (8109): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8110): DEBUG: turn server id=8 created
+0: (8110): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8100): INFO: Total General servers: 12
+0: (8111): DEBUG: turn server id=9 created
+0: (8111): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8112): DEBUG: turn server id=10 created
+0: (8112): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8113): DEBUG: turn server id=11 created
+0: (8113): INFO: IPv4. TCP listener opened on : 172.18.25.146:3478
+0: (8100): INFO: IPv4. UDP listener opened on: 172.18.25.146:3478
+0: (8100): INFO: Total auth threads: 7
+0: (8100): INFO: turnserver compiled without prometheus support
+3446: (8109): INFO: session 007000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+3446: (8109): INFO: IPv4. Local relay addr: 172.18.25.146:58121
+3446: (8109): INFO: session 007000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+3446: (8109): DEBUG: Global turn allocation count incremented, now 1
+3446: (8109): INFO: session 007000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+3446: (8113): INFO: session 011000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+3446: (8113): INFO: IPv4. Local relay addr: 172.18.25.146:59673
+3446: (8113): INFO: session 011000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+3446: (8113): DEBUG: Global turn allocation count incremented, now 2
+3446: (8113): INFO: session 011000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+3692: (8109): INFO: session 007000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+3692: (8113): INFO: session 011000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+3692: (8109): INFO: session 007000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+3692: (8113): INFO: session 011000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+3693: (8109): INFO: session 007000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+3693: (8109): INFO: session 007000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+3693: (8109): INFO: session 007000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:58154, reason: allocation timeout
+3693: (8109): INFO: session 007000000000000001: delete: realm=<172.18.25.146>, username=<user>
+3693: (8109): DEBUG: Global turn allocation count decremented, now 1
+3693: (8113): INFO: session 011000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+3693: (8113): INFO: session 011000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+3693: (8113): INFO: session 011000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:58156, reason: allocation timeout
+3693: (8113): INFO: session 011000000000000001: delete: realm=<172.18.25.146>, username=<user>
+3693: (8113): DEBUG: Global turn allocation count decremented, now 0
+6347: (8103): INFO: session 001000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+6347: (8103): INFO: IPv4. Local relay addr: 172.18.25.146:65369
+6347: (8103): INFO: session 001000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+6347: (8103): DEBUG: Global turn allocation count incremented, now 1
+6347: (8103): INFO: session 001000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+6347: (8109): INFO: session 007000000000000002: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+6347: (8109): INFO: IPv4. Local relay addr: 172.18.25.146:63645
+6347: (8109): INFO: session 007000000000000002: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+6347: (8109): DEBUG: Global turn allocation count incremented, now 2
+6347: (8109): INFO: session 007000000000000002: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+6725: (8103): INFO: session 001000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+6725: (8109): INFO: session 007000000000000002: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+6725: (8109): INFO: session 007000000000000002: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+6725: (8103): INFO: session 001000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+6726: (8103): INFO: session 001000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+6726: (8103): INFO: session 001000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+6726: (8103): INFO: session 001000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:53258, reason: allocation timeout
+6726: (8103): INFO: session 001000000000000001: delete: realm=<172.18.25.146>, username=<user>
+6726: (8103): DEBUG: Global turn allocation count decremented, now 1
+6726: (8109): INFO: session 007000000000000002: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+6726: (8109): INFO: session 007000000000000002: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+6726: (8109): INFO: session 007000000000000002: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:53260, reason: allocation timeout
+6726: (8109): INFO: session 007000000000000002: delete: realm=<172.18.25.146>, username=<user>
+6726: (8109): DEBUG: Global turn allocation count decremented, now 0
+7044: (8104): INFO: session 002000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+7044: (8104): INFO: IPv4. Local relay addr: 172.18.25.146:59667
+7044: (8104): INFO: session 002000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+7044: (8104): DEBUG: Global turn allocation count incremented, now 1
+7044: (8104): INFO: session 002000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+7044: (8106): INFO: session 004000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+7044: (8106): INFO: IPv4. Local relay addr: 172.18.25.146:62447
+7044: (8106): INFO: session 004000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+7044: (8106): DEBUG: Global turn allocation count incremented, now 2
+7044: (8106): INFO: session 004000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+7215: (8106): INFO: session 004000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+7215: (8104): INFO: session 002000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+7215: (8106): INFO: session 004000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+7215: (8104): INFO: session 002000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+7216: (8106): INFO: session 004000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+7216: (8104): INFO: session 002000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+7216: (8106): INFO: session 004000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+7216: (8104): INFO: session 002000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+7216: (8106): INFO: session 004000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:59967, reason: allocation timeout
+7216: (8106): INFO: session 004000000000000001: delete: realm=<172.18.25.146>, username=<user>
+7216: (8104): INFO: session 002000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:59965, reason: allocation timeout
+7216: (8106): DEBUG: Global turn allocation count decremented, now 1
+7216: (8104): INFO: session 002000000000000001: delete: realm=<172.18.25.146>, username=<user>
+7216: (8104): DEBUG: Global turn allocation count decremented, now 0
+7226: (8103): INFO: session 001000000000000002: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+7226: (8103): INFO: IPv4. Local relay addr: 172.18.25.146:54503
+7226: (8103): INFO: session 001000000000000002: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+7226: (8103): DEBUG: Global turn allocation count incremented, now 1
+7226: (8103): INFO: session 001000000000000002: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+7280: (8103): INFO: session 001000000000000002: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+7280: (8103): INFO: session 001000000000000002: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+7281: (8103): INFO: session 001000000000000002: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+7281: (8103): INFO: session 001000000000000002: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+7281: (8103): INFO: session 001000000000000002: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:61475, reason: allocation timeout
+7281: (8103): INFO: session 001000000000000002: delete: realm=<172.18.25.146>, username=<user>
+7281: (8103): DEBUG: Global turn allocation count decremented, now 0
+7283: (8107): INFO: session 005000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+7283: (8107): INFO: IPv4. Local relay addr: 172.18.25.146:51808
+7283: (8107): INFO: session 005000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+7283: (8107): DEBUG: Global turn allocation count incremented, now 1
+7283: (8107): INFO: session 005000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+7283: (8102): INFO: session 000000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+7283: (8102): INFO: IPv4. Local relay addr: 172.18.25.146:52423
+7283: (8102): INFO: session 000000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+7283: (8102): DEBUG: Global turn allocation count incremented, now 2
+7283: (8102): INFO: session 000000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8051: (8107): INFO: session 005000000000000001: realm <172.18.25.146> user <user>: incoming packet message processed, error 438: Stale nonce
+8051: (8102): INFO: session 000000000000000001: realm <172.18.25.146> user <user>: incoming packet message processed, error 438: Stale nonce
+8051: (8111): INFO: session 009000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8051: (8111): INFO: IPv4. Local relay addr: 172.18.25.146:53639
+8051: (8111): INFO: session 009000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8051: (8111): DEBUG: Global turn allocation count incremented, now 3
+8051: (8111): INFO: session 009000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8051: (8105): INFO: session 003000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8051: (8105): INFO: IPv4. Local relay addr: 172.18.25.146:54852
+8051: (8105): INFO: session 003000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8051: (8105): DEBUG: Global turn allocation count incremented, now 4
+8051: (8105): INFO: session 003000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8122: (8111): INFO: session 009000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8122: (8105): INFO: session 003000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8122: (8111): INFO: session 009000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8122: (8105): INFO: session 003000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8122: (8110): INFO: session 008000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8122: (8110): INFO: IPv4. Local relay addr: 172.18.25.146:58412
+8122: (8110): INFO: session 008000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8122: (8110): DEBUG: Global turn allocation count incremented, now 5
+8122: (8110): INFO: session 008000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8122: (8104): INFO: session 002000000000000002: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8122: (8104): INFO: IPv4. Local relay addr: 172.18.25.146:63363
+8122: (8104): INFO: session 002000000000000002: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8122: (8104): DEBUG: Global turn allocation count incremented, now 6
+8122: (8104): INFO: session 002000000000000002: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8123: (8105): INFO: session 003000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8123: (8105): INFO: session 003000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8123: (8105): INFO: session 003000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:65187, reason: allocation timeout
+8123: (8111): INFO: session 009000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8123: (8105): INFO: session 003000000000000001: delete: realm=<172.18.25.146>, username=<user>
+8123: (8111): INFO: session 009000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8123: (8105): DEBUG: Global turn allocation count decremented, now 5
+8123: (8111): INFO: session 009000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:65185, reason: allocation timeout
+8123: (8111): INFO: session 009000000000000001: delete: realm=<172.18.25.146>, username=<user>
+8123: (8111): DEBUG: Global turn allocation count decremented, now 4
+8233: (8110): INFO: session 008000000000000002: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8233: (8110): INFO: IPv4. Local relay addr: 172.18.25.146:55407
+8233: (8110): INFO: session 008000000000000002: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8233: (8110): DEBUG: Global turn allocation count incremented, now 5
+8233: (8110): INFO: session 008000000000000002: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8233: (8103): INFO: session 001000000000000003: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8233: (8103): INFO: IPv4. Local relay addr: 172.18.25.146:63721
+8233: (8103): INFO: session 001000000000000003: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8233: (8103): DEBUG: Global turn allocation count incremented, now 6
+8233: (8103): INFO: session 001000000000000003: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8243: (8110): INFO: session 008000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8243: (8104): INFO: session 002000000000000002: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8243: (8110): INFO: session 008000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8243: (8104): INFO: session 002000000000000002: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8243: (8113): INFO: session 011000000000000002: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8243: (8113): INFO: IPv4. Local relay addr: 172.18.25.146:56096
+8243: (8113): INFO: session 011000000000000002: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8243: (8113): DEBUG: Global turn allocation count incremented, now 7
+8243: (8113): INFO: session 011000000000000002: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8244: (8110): INFO: session 008000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8244: (8110): INFO: session 008000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8244: (8104): INFO: session 002000000000000002: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8244: (8104): INFO: session 002000000000000002: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8244: (8110): INFO: session 008000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:62455, reason: allocation timeout
+8244: (8110): INFO: session 008000000000000001: delete: realm=<172.18.25.146>, username=<user>
+8244: (8110): DEBUG: Global turn allocation count decremented, now 6
+8244: (8104): INFO: session 002000000000000002: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:62457, reason: allocation timeout
+8244: (8104): INFO: session 002000000000000002: delete: realm=<172.18.25.146>, username=<user>
+8244: (8104): DEBUG: Global turn allocation count decremented, now 5
+8302: (8113): INFO: session 011000000000000002: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8302: (8113): INFO: session 011000000000000002: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8303: (8103): INFO: session 001000000000000004: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8303: (8103): INFO: IPv4. Local relay addr: 172.18.25.146:64178
+8303: (8103): INFO: session 001000000000000004: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8303: (8103): DEBUG: Global turn allocation count incremented, now 6
+8303: (8103): INFO: session 001000000000000004: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8303: (8112): INFO: session 010000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8303: (8112): INFO: IPv4. Local relay addr: 172.18.25.146:55828
+8303: (8112): INFO: session 010000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8303: (8112): DEBUG: Global turn allocation count incremented, now 7
+8303: (8112): INFO: session 010000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8303: (8113): INFO: session 011000000000000002: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8303: (8113): INFO: session 011000000000000002: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8303: (8113): INFO: session 011000000000000002: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:63071, reason: allocation timeout
+8303: (8113): INFO: session 011000000000000002: delete: realm=<172.18.25.146>, username=<user>
+8303: (8113): DEBUG: Global turn allocation count decremented, now 6
+8309: (8103): INFO: session 001000000000000003: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8309: (8110): INFO: session 008000000000000002: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8309: (8110): INFO: session 008000000000000002: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8309: (8103): INFO: session 001000000000000003: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8310: (8110): INFO: session 008000000000000002: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8310: (8110): INFO: session 008000000000000002: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8310: (8110): INFO: session 008000000000000002: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:53496, reason: allocation timeout
+8310: (8110): INFO: session 008000000000000002: delete: realm=<172.18.25.146>, username=<user>
+8310: (8110): DEBUG: Global turn allocation count decremented, now 5
+8310: (8103): INFO: session 001000000000000003: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8310: (8103): INFO: session 001000000000000003: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8310: (8103): INFO: session 001000000000000003: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:53498, reason: allocation timeout
+8310: (8103): INFO: session 001000000000000003: delete: realm=<172.18.25.146>, username=<user>
+8310: (8103): DEBUG: Global turn allocation count decremented, now 4
+8376: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8376: (8107): INFO: IPv4. Local relay addr: 172.18.25.146:63900
+8376: (8107): INFO: session 005000000000000002: new, realm=<172.18.25.146>, username=<user>, lifetime=600
+8376: (8107): DEBUG: Global turn allocation count incremented, now 5
+8376: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8417: (8112): INFO: session 010000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8417: (8103): INFO: session 001000000000000004: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8417: (8112): INFO: session 010000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8417: (8103): INFO: session 001000000000000004: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8417: (8107): INFO: session 005000000000000002: peer 172.18.16.1 lifetime updated: 300
+8417: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <user>: incoming packet CREATE_PERMISSION processed, success
+8417: (8107): INFO: session 005000000000000002: peer 172.20.10.4 lifetime updated: 300
+8417: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <user>: incoming packet CREATE_PERMISSION processed, success
+8417: (8107): INFO: session 005000000000000002: peer 172.18.25.146 lifetime updated: 300
+8417: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <user>: incoming packet CREATE_PERMISSION processed, success
+8417: (8107): INFO: session 005000000000000002: peer 172.18.16.1 lifetime updated: 300
+8417: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <user>: incoming packet CREATE_PERMISSION processed, success
+8417: (8107): INFO: session 005000000000000002: peer 172.20.10.4 lifetime updated: 300
+8417: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <user>: incoming packet CREATE_PERMISSION processed, success
+8417: (8108): INFO: session 006000000000000001: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8417: (8108): INFO: IPv4. Local relay addr: 172.18.25.146:59076
+8417: (8108): INFO: session 006000000000000001: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8417: (8108): DEBUG: Global turn allocation count incremented, now 6
+8417: (8108): INFO: session 006000000000000001: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8417: (8107): INFO: session 005000000000000002: peer 172.18.25.146 lifetime updated: 300
+8417: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <user>: incoming packet CREATE_PERMISSION processed, success
+8418: (8112): INFO: session 010000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8418: (8103): INFO: session 001000000000000004: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8418: (8103): INFO: session 001000000000000004: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8418: (8112): INFO: session 010000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8418: (8103): INFO: session 001000000000000004: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:64640, reason: allocation timeout
+8418: (8112): INFO: session 010000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:64642, reason: allocation timeout
+8418: (8103): INFO: session 001000000000000004: delete: realm=<172.18.25.146>, username=<user>
+8418: (8112): INFO: session 010000000000000001: delete: realm=<172.18.25.146>, username=<user>
+8418: (8112): DEBUG: Global turn allocation count decremented, now 5
+8418: (8103): DEBUG: Global turn allocation count decremented, now 4
+8508: (8107): INFO: session 005000000000000002: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8508: (8107): INFO: session 005000000000000002: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8509: (8107): INFO: session 005000000000000002: usage: realm=<172.18.25.146>, username=<user>, rp=23, rb=1132, sp=23, sb=1104
+8509: (8107): INFO: session 005000000000000002: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8509: (8107): INFO: session 005000000000000002: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:60399, reason: allocation timeout
+8509: (8107): INFO: session 005000000000000002: delete: realm=<172.18.25.146>, username=<user>
+8509: (8107): DEBUG: Global turn allocation count decremented, now 3
+8509: (8107): INFO: session 005000000000000002: peer 172.20.10.4 deleted
+8509: (8107): INFO: session 005000000000000002: peer 172.18.16.1 deleted
+8509: (8107): INFO: session 005000000000000002: peer 172.18.25.146 deleted
+8509: (8108): INFO: session 006000000000000001: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8509: (8108): INFO: session 006000000000000001: realm <172.18.25.146> user <user>: incoming packet REFRESH processed, success
+8509: (8112): INFO: session 010000000000000002: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8509: (8112): INFO: IPv4. Local relay addr: 172.18.25.146:56740
+8509: (8112): INFO: session 010000000000000002: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8509: (8112): DEBUG: Global turn allocation count incremented, now 4
+8509: (8112): INFO: session 010000000000000002: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8509: (8106): INFO: session 004000000000000002: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8509: (8106): INFO: IPv4. Local relay addr: 172.18.25.146:63217
+8509: (8106): INFO: session 004000000000000002: new, realm=<172.18.25.146>, username=<user>, lifetime=3600
+8509: (8106): DEBUG: Global turn allocation count incremented, now 5
+8509: (8106): INFO: session 004000000000000002: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8510: (8108): INFO: session 006000000000000001: usage: realm=<172.18.25.146>, username=<user>, rp=4, rb=288, sp=4, sb=272
+8510: (8108): INFO: session 006000000000000001: peer usage: realm=<172.18.25.146>, username=<user>, rp=0, rb=0, sp=0, sb=0
+8510: (8108): INFO: session 006000000000000001: closed (2nd stage), user <user> realm <172.18.25.146> origin <>, local 172.18.25.146:3478, remote 172.18.16.1:60561, reason: allocation timeout
+8510: (8108): INFO: session 006000000000000001: delete: realm=<172.18.25.146>, username=<user>
+8510: (8108): DEBUG: Global turn allocation count decremented, now 4
+8601: (8109): INFO: session 007000000000000003: realm <172.18.25.146> user <>: incoming packet message processed, error 401: Unauthorized
+8601: (8109): INFO: IPv4. Local relay addr: 172.18.25.146:58674
+8601: (8109): INFO: session 007000000000000003: new, realm=<172.18.25.146>, username=<user>, lifetime=600
+8601: (8109): DEBUG: Global turn allocation count incremented, now 5
+8601: (8109): INFO: session 007000000000000003: realm <172.18.25.146> user <user>: incoming packet ALLOCATE processed, success
+8618: (8112): INFO: session 010000000000000002: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8618: (8106): INFO: session 004000000000000002: refreshed, realm=<172.18.25.146>, username=<user>, lifetime=0
+8618: (8112): INFO: session 010000000000000002: realm <172.18.25.146> user <user>: incoming p

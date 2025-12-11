@@ -28,6 +28,56 @@
             margin-top: 20px;
             width: 300px;
         }
+
+        .visualizer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+            gap: 20px;
+        }
+
+        .visualizer {
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .visualizer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-container label {
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .slider-container input[type="range"] {
+            width: 300px;
+        }
+
+        .slider-value {
+            font-family: monospace;
+            font-weight: bold;
+            color: #0066cc;
+            min-width: 50px;
+        }
     </style>
 </head>
 
@@ -35,7 +85,27 @@
     <h1>WebRTC Audio Relay (Coturn)</h1>
     <button id="startBtn">Start Streaming</button>
     <div id="status" class="status">Ready</div>
+
+    <div class="controls">
+        <div class="slider-container">
+            <label for="pitchSlider">Pitch Shift:</label>
+            <input type="range" id="pitchSlider" min="1.10" max="1.20" step="0.01" value="1.11">
+            <span class="slider-value" id="pitchValue">1.11</span>
+        </div>
+    </div>
+
     <audio id="remoteAudio" autoplay controls></audio>
+
+    <div class="visualizer-container">
+        <div>
+            <div class="visualizer-label">Local Stream FFT (Microphone)</div>
+            <canvas id="localCanvas" class="visualizer" width="512" height="200"></canvas>
+        </div>
+        <div>
+            <div class="visualizer-label">Remote Stream FFT (Received Audio)</div>
+            <canvas id="remoteCanvas" class="visualizer" width="512" height="200"></canvas>
+        </div>
+    </div>
 
     <script src="client.js"></script>
 </body>

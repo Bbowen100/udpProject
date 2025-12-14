@@ -32,12 +32,21 @@ let pitchShiftFactor = 1.0; // 1.05 = increase pitch by 11%
 // Pitch shift slider elements
 const pitchSlider = document.getElementById('pitchSlider');
 const pitchValue = document.getElementById('pitchValue');
+const pitchToggle = document.getElementById('pitchToggle');
+
+let pitchShiftEnabled = true;
 
 // Update pitch shift factor when slider changes
 pitchSlider.addEventListener('input', (event) => {
     pitchShiftFactor = parseFloat(event.target.value);
     pitchValue.textContent = pitchShiftFactor.toFixed(2);
     updatePitchShift(pitchShiftFactor);
+});
+
+// Update pitch shift enabled state
+pitchToggle.addEventListener('change', (event) => {
+    pitchShiftEnabled = event.target.checked;
+    console.log('Pitch shift enabled:', pitchShiftEnabled);
 });
 
 // Connect to the signaling server (WebSocket)
@@ -282,6 +291,23 @@ async function setupAudioProcessing(sourceNode) {
             // Get input channels
             const inputDataL = inputBuffer.getChannelData(0);
             const inputDataR = inputBuffer.getChannelData(1);
+            const outputDataL = outputBuffer.getChannelData(0);
+            const outputDataR = outputBuffer.getChannelData(1);
+
+            if (!pitchShiftEnabled) {
+                // PASS-THROUGH MODE: Copy input to output directly
+                // This ensures the rest of the pipeline (filters, etc.) receives the raw audio
+                for (let i = 0; i < bufferSize; i++) {
+                    outputDataL[i] = inputDataL[i];
+                    outputDataR[i] = inputDataR[i];
+                }
+
+                // Clear SoundTouch internal buffers to prevent stale data accumulation
+                if (soundTouch.inputBuffer.frameCount > 0) {
+                    soundTouch.inputBuffer.clear();
+                }
+                return;
+            }
 
             // Interleave samples for SoundTouch (L, R, L, R...)
             for (let i = 0; i < bufferSize; i++) {
@@ -300,13 +326,7 @@ async function setupAudioProcessing(sourceNode) {
             const framesAvailable = soundTouch.outputBuffer.frameCount;
             const framesToExtract = Math.min(framesAvailable, bufferSize);
 
-            // console.log(`AudioProcess: In=${bufferSize} OutAvailable=${framesAvailable} Extracting=${framesToExtract}`);
-
-            // Clear output buffer first (silence)
-            const outputDataL = outputBuffer.getChannelData(0);
-            const outputDataR = outputBuffer.getChannelData(1);
-
-            // Zero out buffer if not enough samples (or to fill gaps)
+            // Zero out buffer initially
             for (let i = 0; i < bufferSize; i++) {
                 outputDataL[i] = 0;
                 outputDataR[i] = 0;
@@ -347,7 +367,7 @@ async function setupAudioProcessing(sourceNode) {
         // Create a high-pass filter for hum removal
         const highPassFilter = audioContext.createBiquadFilter();
         highPassFilter.type = 'highpass';
-        highPassFilter.frequency.value = 105; // Cut off frequencies below 120Hz (removes hum/rumble)
+        highPassFilter.frequency.value = 105; // Cut off frequencies below 105Hz (removes hum/rumble)
         highPassFilter.Q.value = 0.7;
 
         // Create destination for processed audio

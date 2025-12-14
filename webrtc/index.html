@@ -88,7 +88,11 @@
 
     <div class="controls">
         <div class="slider-container">
-            <label for="pitchSlider">Pitch Shift:</label>
+            <label for="pitchToggle">Enable Pitch Shift:</label>
+            <input type="checkbox" id="pitchToggle" checked>
+        </div>
+        <div class="slider-container">
+            <label for="pitchSlider">Pitch Shift Factor:</label>
             <input type="range" id="pitchSlider" min="0.5" max="2.0" step="0.05" value="1.0">
             <span class="slider-value" id="pitchValue">1.0</span>
         </div>

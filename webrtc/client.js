@@ -1,3 +1,8 @@
+// SoundTouchJS imports
+import { SoundTouch } from './SoundTouchJS/dist/soundtouch.js';
+
+let soundTouch;
+
 const startBtn = document.getElementById('startBtn');
 const statusDiv = document.getElementById('status');
 const remoteAudio = document.getElementById('remoteAudio');
@@ -21,9 +26,8 @@ let remoteDataArray;
 let animationId;
 
 // Audio processing setup
-let scriptProcessor;
 let mediaStreamDestination;
-let pitchShiftFactor = 1.11; // 1.05 = increase pitch by 11%
+let pitchShiftFactor = 1.0; // 1.05 = increase pitch by 11%
 
 // Pitch shift slider elements
 const pitchSlider = document.getElementById('pitchSlider');
@@ -33,7 +37,7 @@ const pitchValue = document.getElementById('pitchValue');
 pitchSlider.addEventListener('input', (event) => {
     pitchShiftFactor = parseFloat(event.target.value);
     pitchValue.textContent = pitchShiftFactor.toFixed(2);
-    console.log('Pitch shift factor updated to:', pitchShiftFactor);
+    updatePitchShift(pitchShiftFactor);
 });
 
 // Connect to the signaling server (WebSocket)
@@ -60,15 +64,16 @@ const rtcConfig = {
         audio: {
             noiseSuppression: true,
             echoCancellation: true,
-            autoGainControl: true
-        }
+            autoGainControl: false
+        },
+        video: false
     });
     startBtn.disabled = false;
     console.log('Microphone access granted');
 
     // Initialize audio context and FFT for local stream
-    initializeAudioAnalysis();
-    connectLocalStream();
+    await initializeAudioAnalysis();
+    await connectLocalStream();
 
     // Wait a bit for the audio processing pipeline to be ready
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -222,7 +227,7 @@ startBtn.onclick = async () => {
 };
 
 // Initialize Web Audio API for FFT analysis
-function initializeAudioAnalysis() {
+async function initializeAudioAnalysis() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     // Create analyzers for local and remote streams
@@ -242,88 +247,143 @@ function initializeAudioAnalysis() {
 }
 
 // Connect local microphone stream to analyzer
-function connectLocalStream() {
+async function connectLocalStream() {
     if (!audioContext || !localStream) return;
 
     const source = audioContext.createMediaStreamSource(localStream);
-    source.connect(localAnalyser);
+    const analyzerSource = audioContext.createMediaStreamSource(localStream);
+    analyzerSource.connect(localAnalyser);
     console.log('Local stream connected to FFT analyzer');
 
     // Create audio processing pipeline for pitch shifting
-    setupAudioProcessing(source);
+    await setupAudioProcessing(source);
 }
 
-// Setup audio processing pipeline with pitch shifting
-function setupAudioProcessing(sourceNode) {
-    // Create script processor for audio manipulation
-    const bufferSize = 4096;
-    scriptProcessor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+// Setup audio processing pipeline with pitch shifting using SoundTouch
+async function setupAudioProcessing(sourceNode) {
 
-    // Create destination for processed audio
-    mediaStreamDestination = audioContext.createMediaStreamDestination();
+    try {
 
-    // Connect: source -> script processor -> destination
-    sourceNode.connect(scriptProcessor);
-    scriptProcessor.connect(mediaStreamDestination);
+        // Initialize SoundTouch for live processing
+        soundTouch = new SoundTouch();
+        soundTouch.pitch = pitchShiftFactor;
 
-    // Process audio with FFT pitch shifting
-    scriptProcessor.onaudioprocess = function (audioProcessingEvent) {
-        const inputBuffer = audioProcessingEvent.inputBuffer;
-        const outputBuffer = audioProcessingEvent.outputBuffer;
+        // Create ScriptProcessorNode
+        // Buffer size 4096 gives ~0.09s latency at 44.1kHz, which is a good balance for pitch shifting quality vs latency
+        const bufferSize = 4096;
+        const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 2, 2);
 
-        const inputData = inputBuffer.getChannelData(0);
-        const outputData = outputBuffer.getChannelData(0);
+        const samples = new Float32Array(bufferSize * 2);
 
-        // Apply pitch shifting using FFT
-        pitchShift(inputData, outputData);
-    };
+        scriptProcessor.onaudioprocess = function (audioProcessingEvent) {
+            const inputBuffer = audioProcessingEvent.inputBuffer;
+            const outputBuffer = audioProcessingEvent.outputBuffer;
 
-    // Store the processed stream
-    processedStream = mediaStreamDestination.stream;
-    console.log('Audio processing pipeline created with pitch shift factor:', pitchShiftFactor);
+            // Get input channels
+            const inputDataL = inputBuffer.getChannelData(0);
+            const inputDataR = inputBuffer.getChannelData(1);
+
+            // Interleave samples for SoundTouch (L, R, L, R...)
+            for (let i = 0; i < bufferSize; i++) {
+                samples[i * 2] = inputDataL[i];
+                samples[i * 2 + 1] = inputDataR[i];
+            }
+
+            // Put samples into SoundTouch buffer
+            soundTouch.inputBuffer.putSamples(samples, 0, bufferSize);
+
+            // Process samples
+            soundTouch.process();
+
+            // Pull processed samples from SoundTouch buffer
+            // We need to match the output buffer size
+            const framesAvailable = soundTouch.outputBuffer.frameCount;
+            const framesToExtract = Math.min(framesAvailable, bufferSize);
+
+            // console.log(`AudioProcess: In=${bufferSize} OutAvailable=${framesAvailable} Extracting=${framesToExtract}`);
+
+            // Clear output buffer first (silence)
+            const outputDataL = outputBuffer.getChannelData(0);
+            const outputDataR = outputBuffer.getChannelData(1);
+
+            // Zero out buffer if not enough samples (or to fill gaps)
+            for (let i = 0; i < bufferSize; i++) {
+                outputDataL[i] = 0;
+                outputDataR[i] = 0;
+            }
+
+            if (framesToExtract > 0) {
+                // Reuse our samples buffer for extraction
+                // consume samples from the buffer
+                soundTouch.outputBuffer.receiveSamples(samples, framesToExtract);
+
+                // De-interleave back to channels
+                for (let i = 0; i < framesToExtract; i++) {
+                    outputDataL[i] = samples[i * 2];
+                    outputDataR[i] = samples[i * 2 + 1];
+                }
+            }
+        };
+
+        console.log('Created SoundTouch ScriptProcessor');
+
+        // === NOISE REDUCTION STAGE ==
+
+        // 2. Noise gate using DynamicsCompressor
+        const noiseGate = audioContext.createDynamicsCompressor();
+        noiseGate.threshold.value = -20; // dB - signals below this are reduced
+        noiseGate.knee.value = 10;
+        noiseGate.ratio.value = 12;
+        noiseGate.attack.value = 0.003; // Fast attack (3ms)
+        noiseGate.release.value = 0.25; // Medium release (250ms)
+        console.log('Created noise gate');
+
+        // Create a low-pass filter for smoothing
+        const smoothingFilter = audioContext.createBiquadFilter();
+        smoothingFilter.type = 'lowpass';
+        smoothingFilter.frequency.value = 3450; // Cut off frequencies above 3.6kHz
+        smoothingFilter.Q.value = 0.55; // Smoothness factor
+
+        // Create a high-pass filter for hum removal
+        const highPassFilter = audioContext.createBiquadFilter();
+        highPassFilter.type = 'highpass';
+        highPassFilter.frequency.value = 105; // Cut off frequencies below 120Hz (removes hum/rumble)
+        highPassFilter.Q.value = 0.7;
+
+        // Create destination for processed audio
+        mediaStreamDestination = audioContext.createMediaStreamDestination();
+
+        // Connect logic
+        sourceNode.connect(noiseGate);
+        noiseGate.connect(scriptProcessor);
+        scriptProcessor.connect(highPassFilter);
+        highPassFilter.connect(smoothingFilter);
+        smoothingFilter.connect(mediaStreamDestination);
+
+
+        // Store the processed stream
+        processedStream = mediaStreamDestination.stream;
+        console.log('Real-time audio processing pipeline created with SoundTouch ScriptProcessor');
+    } catch (err) {
+        console.error('Failed to setup SoundTouch:', err);
+        // Fallback: connect directly without pitch shifting
+        mediaStreamDestination = audioContext.createMediaStreamDestination();
+        sourceNode.connect(mediaStreamDestination);
+        processedStream = mediaStreamDestination.stream;
+    }
 }
 
-// Pitch shifting using FFT and inverse FFT
-function pitchShift(inputData, outputData) {
-    const N = inputData.length;
+// Update pitch in real-time when slider changes
+function updatePitchShift(newFactor) {
+    if (soundTouch) {
+        // SoundTouch uses 'pitch' (factor) directly, or pitchSemitones
+        // The slider gives factor (e.g. 0.5 to 2.0)
+        // Ensure newFactor is not 0 to avoid errors
+        const factor = Math.max(0.1, newFactor);
+        soundTouch.pitch = factor;
 
-    // Create complex arrays for FFT (real and imaginary parts)
-    const real = new Float32Array(N);
-    const imag = new Float32Array(N);
-
-    // Copy input data to real part
-    for (let i = 0; i < N; i++) {
-        real[i] = inputData[i];
-        imag[i] = 0;
-    }
-
-    // Apply FFT
-    fft(real, imag);
-
-    // Create new arrays for shifted spectrum
-    const shiftedReal = new Float32Array(N);
-    const shiftedImag = new Float32Array(N);
-
-    // Shift frequencies by scaling the bin indices
-    // To increase pitch, we compress the spectrum (read from higher indices)
-    for (let i = 0; i < N / 2; i++) {
-        const sourceIndex = Math.floor(i / pitchShiftFactor);
-        if (sourceIndex < N / 2) {
-            shiftedReal[i] = real[sourceIndex];
-            shiftedImag[i] = imag[sourceIndex];
-            // Mirror for negative frequencies
-            shiftedReal[N - i - 1] = real[N - sourceIndex - 1];
-            shiftedImag[N - i - 1] = imag[N - sourceIndex - 1];
-        }
-    }
-
-    // Apply inverse FFT
-    ifft(shiftedReal, shiftedImag);
-
-    // Copy result to output, normalizing
-    const scale = 1.0 / N;
-    for (let i = 0; i < N; i++) {
-        outputData[i] = shiftedReal[i] * scale;
+        const semitones = 12 * Math.log2(factor);
+        console.log(`Updated pitch to ${semitones.toFixed(2)} semitones (factor: ${factor})`);
     }
 }
 
@@ -377,21 +437,6 @@ function fft(real, imag) {
     }
 }
 
-// Inverse Fast Fourier Transform
-function ifft(real, imag) {
-    // Conjugate the complex numbers
-    for (let i = 0; i < imag.length; i++) {
-        imag[i] = -imag[i];
-    }
-
-    // Apply FFT
-    fft(real, imag);
-
-    // Conjugate again
-    for (let i = 0; i < imag.length; i++) {
-        imag[i] = -imag[i];
-    }
-}
 
 // Connect remote stream to analyzer
 function connectRemoteStream(stream) {

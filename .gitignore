@@ -16,3 +16,4 @@ node_modules/
 webrtc/node_modules/
 webrtc/coturn/
 webrtc/coturn.log
+webrtc/SoundTouchJS/

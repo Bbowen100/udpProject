@@ -1,0 +1,12 @@
+{
+  "name": "webrtc-pitch-tests",
+  "version": "1.0.0",
+  "description": "Automated tests for WebRTC pitch shifting",
+  "main": "e2e_pitch_test.js",
+  "scripts": {
+    "test": "node e2e_pitch_test.js"
+  },
+  "dependencies": {
+    "puppeteer": "^23.0.0"
+  }
+}

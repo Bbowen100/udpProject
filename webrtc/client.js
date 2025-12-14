@@ -223,6 +223,10 @@ async function startPeerConnection() {
 
 startBtn.onclick = async () => {
     try {
+        if (audioContext && audioContext.state === 'suspended') {
+            await audioContext.resume();
+            console.log('AudioContext resumed');
+        }
 
         ws.send(JSON.stringify(pc.localDescription));
         console.log('Offer sent to signaling server');

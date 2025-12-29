@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Kill existing processes if any
+pkill -9 -f "python3 -m http.server"
 pkill -9 -f turnserver
-pkill -9 -f "webrtc/server"
+pkill -9 -f "sfu/mediasoup-server/server.js"
 sleep 1
 
 # Start Coturn
@@ -10,19 +11,30 @@ echo "Starting Coturn..."
 ./run_coturn.sh > coturn.log 2>&1 &
 COTURN_PID=$!
 
-# Start Signaling Server
-echo "Starting Signaling Server..."
-./server &
+# Start Mediasoup Server
+echo "Starting Mediasoup Server..."
+node sfu/mediasoup-server/server.js > server.log 2>&1 &
 SERVER_PID=$!
 
-# Wait a bit
-# sleep 2
+# Start Vite Build & Serve
+echo "Building client..."
+npm run build
 
-# Start HTTP Server
-echo "Starting HTTP Server on port 8000..."
-python3 -m http.server 8000
+echo "Starting Python HTTP Server..."
+cd dist && python3 -m http.server 8000 &
+PYTHON_PID=$!
+cd ..
 
 # Cleanup on exit
-kill $COTURN_PID
-kill $SERVER_PID
-echo "Cleanup complete."
+cleanup() {
+    echo "Cleaning up..."
+    kill $COTURN_PID 2>/dev/null
+    kill $SERVER_PID 2>/dev/null
+    kill $PYTHON_PID 2>/dev/null
+}
+
+# Trap signals
+trap cleanup EXIT INT TERM
+
+# Wait for python server
+wait $PYTHON_PID

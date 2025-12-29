@@ -1,6 +1,9 @@
 // SoundTouchJS imports
 import { SoundTouch } from './SoundTouchJS/dist/soundtouch.js';
 
+import * as mediasoupClient from 'mediasoup-client';
+import { io } from 'socket.io-client';
+
 let soundTouch;
 
 const startBtn = document.getElementById('startBtn');
@@ -11,11 +14,15 @@ const remoteCanvas = document.getElementById('remoteCanvas');
 const localCtx = localCanvas.getContext('2d');
 const remoteCtx = remoteCanvas.getContext('2d');
 
-let pc;
+let device;
+let socket;
+let producerTransport;
+let consumerTransport;
+let producer;
+let consumer;
+
 let localStream;
 let processedStream; // Stream with pitch-shifted audio
-let iceCandidateQueue = [];
-let canSendIceCandidates = false;
 
 // Audio analysis setup
 let audioContext;
@@ -27,7 +34,7 @@ let animationId;
 
 // Audio processing setup
 let mediaStreamDestination;
-let pitchShiftFactor = 1.0; // 1.05 = increase pitch by 11%
+let pitchShiftFactor = 1.0;
 
 // Pitch shift slider elements
 const pitchSlider = document.getElementById('pitchSlider');
@@ -49,24 +56,30 @@ pitchToggle.addEventListener('change', (event) => {
     console.log('Pitch shift enabled:', pitchShiftEnabled);
 });
 
-// Connect to the signaling server (WebSocket)
-const ws = new WebSocket('ws://localhost:8083/signaling');
+// Mediasoup Config with Coturn
+// Note: In a real app, these should be fetched from server
+const iceServers = [
+    {
+        urls: 'turn:172.18.25.146:3478',
+        username: 'user',
+        credential: 'password'
+    },
+];
 
-// WebRTC Configuration using local Coturn
-const rtcConfig = {
-    iceTransportPolicy: "relay",
-    iceServers: [
-        {
-            urls: 'turn:172.18.25.146:3478',
-            username: 'user',
-            credential: 'password'
-        }
-    ]
+// Start
+startBtn.onclick = async () => {
+    startBtn.disabled = true;
+    try {
+        await startCapture();
+        await connectToServer();
+    } catch (err) {
+        console.error('Error starting:', err);
+        statusDiv.innerText = 'Error: ' + err.message;
+        startBtn.disabled = false;
+    }
 };
 
-
-(async function init() {
-    startBtn.disabled = true;
+async function startCapture() {
     statusDiv.innerText = 'Requesting microphone...';
     console.log('Requesting microphone...');
     localStream = await navigator.mediaDevices.getUserMedia({
@@ -77,167 +90,221 @@ const rtcConfig = {
         },
         video: false
     });
-    startBtn.disabled = false;
     console.log('Microphone access granted');
 
     // Initialize audio context and FFT for local stream
     await initializeAudioAnalysis();
     await connectLocalStream();
+}
 
-    // Wait a bit for the audio processing pipeline to be ready
-    await new Promise(resolve => setTimeout(resolve, 100));
+async function connectToServer() {
+    statusDiv.innerText = 'Connecting to server...';
 
-    await startPeerConnection();
+    // Connect to Socket.IO path (served by the node server)
+    // Assuming the node server is running on the same host but different port (or proxy)
+    // Based on run_demo.sh, we use `node sfu/mediasoup-server/server.js` which listens on 3000
+    // But the run_demo.sh doesn't expose 3000? 
+    // Wait, the HTTP server is on 8000. The Mediasoup server is on 3000 (from config.js).
+    // We should connect to port 3000.
 
-    // Create Offer
-    console.log('Creating offer...');
-    const offer = await pc.createOffer();
-    console.log('Offer created, setting local description...');
-    await pc.setLocalDescription(offer);
-    console.log('Local description set');
-})();
+    const url = `${window.location.protocol}//${window.location.hostname}:3000`;
+    console.log('Connecting to socket at:', url);
 
-ws.onopen = () => {
-    console.log('Connected to signaling server');
-    statusDiv.innerText = 'Connected to signaling server';
-};
+    socket = io(url);
 
-ws.onmessage = async (event) => {
+    socket.on('connect', async () => {
+        console.log('Socket connected');
+        statusDiv.innerText = 'Connected to Signaling Server';
+        await joinRoom();
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+        statusDiv.innerText = 'Disconnected';
+    });
+
+    socket.on('newProducer', async ({ producerId }) => {
+        console.log('New producer available:', producerId);
+        // Automatically consume new producers for this demo
+        await consume(producerId);
+    });
+
+    socket.on('consumerClosed', ({ consumerId }) => {
+        console.log('Consumer closed:', consumerId);
+        if (consumer && consumer.id === consumerId) {
+            consumer.close();
+            consumer = null;
+        }
+    });
+}
+
+async function joinRoom() {
     try {
-        const data = JSON.parse(event.data);
+        device = new mediasoupClient.Device();
 
-        if (!pc) {
-            await startPeerConnection();
+        // Get Router RTP Capabilities
+        const routerRtpCapabilities = await request('getRouterRtpCapabilities');
+        console.log('Router RTP Capabilities:', routerRtpCapabilities);
+
+        await device.load({ routerRtpCapabilities });
+
+        // Create Send Transport
+        await createSendTransport();
+
+        // Create Recv Transport
+        await createRecvTransport();
+
+        // Produce our audio
+        await produce();
+
+        // Consume existing producers
+        const remoteProducerIds = await request('getProducers');
+        console.log('number of existing producers:', remoteProducerIds.length);
+
+        for (const id of remoteProducerIds) {
+            // Don't consume our own producer if we don't want loopback, 
+            // but for now the server sends back all. 
+            // If we want to avoid self-consumption loopback in the UI, we can check:
+            if (producer && id === producer.id) continue;
+
+            await consume(id);
         }
 
-        if (data.type === 'offer') {
-            console.log('Received offer');
-            await pc.setRemoteDescription(data);
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            ws.send(JSON.stringify(pc.localDescription));
-            statusDiv.innerText = 'Sent Answer';
-
-            // Request ICE candidates from the peer
-            ws.send(JSON.stringify({ type: 'request_ice_candidates' }));
-        } else if (data.type === 'answer') {
-            console.log('Received answer');
-            await pc.setRemoteDescription(data);
-            statusDiv.innerText = 'Received Answer';
-
-            // Request ICE candidates from the peer
-            ws.send(JSON.stringify({ type: 'request_ice_candidates' }));
-        } else if (data.candidate) {
-            console.log('Received ICE candidate');
-            await pc.addIceCandidate(data.candidate);
-        } else if (data.type === 'request_ice_candidates') {
-            console.log('Received request for ICE candidates');
-            canSendIceCandidates = true;
-            // Send queued candidates
-            while (iceCandidateQueue.length > 0) {
-                const candidate = iceCandidateQueue.shift();
-                console.log('Sending queued ICE candidate');
-                ws.send(JSON.stringify({ candidate: candidate }));
-            }
-        }
-    } catch (e) {
-        console.error('Signaling error:', e);
-    }
-};
-
-async function startPeerConnection() {
-    if (pc) return;
-
-    console.log('Creating RTCPeerConnection with config:', JSON.stringify(rtcConfig));
-    try {
-        pc = new RTCPeerConnection(rtcConfig);
-    } catch (e) {
-        console.error('Failed to create RTCPeerConnection:', e);
-        return;
-    }
-
-    pc.onicecandidate = (event) => {
-        if (event.candidate && event.candidate.candidate !== '') {
-            if (canSendIceCandidates) {
-                console.log('Sending ICE candidate:', event.candidate);
-                ws.send(JSON.stringify({ candidate: event.candidate }));
-            } else {
-                console.log('Queueing ICE candidate:', event.candidate);
-                iceCandidateQueue.push(event.candidate);
-            }
-        } else {
-            console.log('ICE candidate gathering complete');
-        }
-    };
-
-    pc.onicegatheringstatechange = () => {
-        console.log('ICE Gathering State:', pc.iceGatheringState);
-    };
-
-    pc.onsignalingstatechange = () => {
-        console.log('Signaling State:', pc.signalingState);
-    };
-
-    pc.ontrack = (event) => {
-        console.log('Received remote track');
-        if (remoteAudio.srcObject !== event.streams[0]) {
-            remoteAudio.srcObject = event.streams[0];
-            console.log('Set remote audio stream');
-
-            // Connect remote stream to FFT analyzer
-            connectRemoteStream(event.streams[0]);
-        }
-    };
-
-    pc.onconnectionstatechange = () => {
-        console.log('Connection state:', pc.connectionState);
-        statusDiv.innerText = 'State: ' + pc.connectionState;
-    };
-
-    pc.oniceconnectionstatechange = () => {
-        console.log('ICE Connection state:', pc.iceConnectionState);
-    };
-
-    // If we have a local stream, add it
-    if (localStream) {
-        console.log('Adding local tracks to PeerConnection');
-
-        // Use the processed stream if available, otherwise use the original
-        const streamToSend = processedStream || localStream;
-
-        streamToSend.getTracks().forEach(track => {
-            console.log('Adding track:', track.kind, track.label);
-            pc.addTrack(track, streamToSend);
-        });
-
-        if (processedStream) {
-            console.log('Using processed stream with pitch shift factor:', pitchShiftFactor);
-        }
-    } else {
-        console.log('No local stream to add - adding recvonly audio transceiver');
-        // Add a recvonly transceiver so the peer connection generates ICE candidates
-        // even without a local stream (needed for the receiving peer)
-        pc.addTransceiver('audio', { direction: 'recvonly' });
+    } catch (err) {
+        console.error('Join room error:', err);
+        statusDiv.innerText = 'Error joining room: ' + err.message;
     }
 }
 
-startBtn.onclick = async () => {
-    try {
-        if (audioContext && audioContext.state === 'suspended') {
-            await audioContext.resume();
-            console.log('AudioContext resumed');
+async function createSendTransport() {
+    const params = await request('createProducerTransport');
+    console.log('Transport params:', params);
+
+    // Add turn servers to iceServers if needed, or use what server sends if it managed it
+    // But here we enforce our local turn
+    params.iceServers = iceServers;
+
+    producerTransport = device.createSendTransport(params);
+
+    producerTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
+        try {
+            await request('connectTransport', {
+                transportId: producerTransport.id,
+                dtlsParameters,
+            });
+            callback();
+        } catch (error) {
+            errback(error);
         }
+    });
 
-        ws.send(JSON.stringify(pc.localDescription));
-        console.log('Offer sent to signaling server');
+    producerTransport.on('produce', async ({ kind, rtpParameters }, callback, errback) => {
+        try {
+            const { id } = await request('produce', {
+                transportId: producerTransport.id,
+                kind,
+                rtpParameters,
+            });
+            callback({ id });
+        } catch (error) {
+            errback(error);
+        }
+    });
 
-        statusDiv.innerText = 'Sent Offer';
-    } catch (e) {
-        console.error('Error starting stream:', e);
-        statusDiv.innerText = 'Error: ' + e.message;
-        startBtn.disabled = true;
-    }
-};
+    producerTransport.on('connectionstatechange', (state) => {
+        console.log('Producer transport state:', state);
+        if (state === 'connected') {
+            statusDiv.innerText = 'Publishing...';
+        }
+    });
+}
+
+async function createRecvTransport() {
+    const params = await request('createConsumerTransport');
+    params.iceServers = iceServers;
+
+    consumerTransport = device.createRecvTransport(params);
+
+    consumerTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
+        try {
+            await request('connectTransport', {
+                transportId: consumerTransport.id,
+                dtlsParameters,
+            });
+            callback();
+        } catch (error) {
+            errback(error);
+        }
+    });
+
+    consumerTransport.on('connectionstatechange', (state) => {
+        console.log('Consumer transport state:', state);
+    });
+}
+
+async function produce() {
+    if (!localStream) return;
+
+    // Use processed stream if available
+    const streamToProduce = processedStream || localStream;
+    const track = streamToProduce.getAudioTracks()[0];
+
+    producer = await producerTransport.produce({ track });
+    console.log('Producer created:', producer.id);
+}
+
+async function consume(producerId) {
+    // Prevent consuming own producer if we created it (unless we want loopback)
+    // For this demo, let's allow loopback to hear ourselves via server
+
+    const { rtpCapabilities } = device;
+    const data = await request('consume', {
+        transportId: consumerTransport.id,
+        producerId,
+        rtpCapabilities,
+    });
+
+    const {
+        id,
+        kind,
+        rtpParameters,
+    } = data;
+
+    consumer = await consumerTransport.consume({
+        id,
+        producerId,
+        kind,
+        rtpParameters,
+    });
+
+    const stream = new MediaStream();
+    stream.addTrack(consumer.track);
+
+    remoteAudio.srcObject = stream;
+    console.log('Consumer created and playing');
+
+    // Connect to analyzer
+    connectRemoteStream(stream);
+
+    // Resume on server side (though we did it in server.js, good practice)
+    await request('resume', { consumerId: consumer.id });
+}
+
+
+function request(type, data = {}) {
+    return new Promise((resolve, reject) => {
+        socket.emit(type, data, (response) => {
+            if (response && response.error) {
+                reject(new Error(response.error));
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
+
+// --- Audio Processing & Analysis (Kept largely the same) ---
 
 // Initialize Web Audio API for FFT analysis
 async function initializeAudioAnalysis() {
@@ -276,72 +343,53 @@ async function connectLocalStream() {
 async function setupAudioProcessing(sourceNode) {
 
     try {
-
         // Initialize SoundTouch for live processing
         soundTouch = new SoundTouch();
         soundTouch.pitch = pitchShiftFactor;
 
         // Create ScriptProcessorNode
-        // Buffer size 4096 gives ~0.09s latency at 44.1kHz, which is a good balance for pitch shifting quality vs latency
         const bufferSize = 4096;
         const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 2, 2);
-
         const samples = new Float32Array(bufferSize * 2);
 
         scriptProcessor.onaudioprocess = function (audioProcessingEvent) {
             const inputBuffer = audioProcessingEvent.inputBuffer;
             const outputBuffer = audioProcessingEvent.outputBuffer;
 
-            // Get input channels
             const inputDataL = inputBuffer.getChannelData(0);
             const inputDataR = inputBuffer.getChannelData(1);
             const outputDataL = outputBuffer.getChannelData(0);
             const outputDataR = outputBuffer.getChannelData(1);
 
             if (!pitchShiftEnabled) {
-                // PASS-THROUGH MODE: Copy input to output directly
-                // This ensures the rest of the pipeline (filters, etc.) receives the raw audio
                 for (let i = 0; i < bufferSize; i++) {
                     outputDataL[i] = inputDataL[i];
                     outputDataR[i] = inputDataR[i];
                 }
-
-                // Clear SoundTouch internal buffers to prevent stale data accumulation
                 if (soundTouch.inputBuffer.frameCount > 0) {
                     soundTouch.inputBuffer.clear();
                 }
                 return;
             }
 
-            // Interleave samples for SoundTouch (L, R, L, R...)
             for (let i = 0; i < bufferSize; i++) {
                 samples[i * 2] = inputDataL[i];
                 samples[i * 2 + 1] = inputDataR[i];
             }
 
-            // Put samples into SoundTouch buffer
             soundTouch.inputBuffer.putSamples(samples, 0, bufferSize);
-
-            // Process samples
             soundTouch.process();
 
-            // Pull processed samples from SoundTouch buffer
-            // We need to match the output buffer size
             const framesAvailable = soundTouch.outputBuffer.frameCount;
             const framesToExtract = Math.min(framesAvailable, bufferSize);
 
-            // Zero out buffer initially
             for (let i = 0; i < bufferSize; i++) {
                 outputDataL[i] = 0;
                 outputDataR[i] = 0;
             }
 
             if (framesToExtract > 0) {
-                // Reuse our samples buffer for extraction
-                // consume samples from the buffer
                 soundTouch.outputBuffer.receiveSamples(samples, framesToExtract);
-
-                // De-interleave back to channels
                 for (let i = 0; i < framesToExtract; i++) {
                     outputDataL[i] = samples[i * 2];
                     outputDataR[i] = samples[i * 2 + 1];
@@ -351,46 +399,38 @@ async function setupAudioProcessing(sourceNode) {
 
         console.log('Created SoundTouch ScriptProcessor');
 
-        // === NOISE REDUCTION STAGE ==
-
-        // 2. Noise gate using DynamicsCompressor
+        // Noise gate
         const noiseGate = audioContext.createDynamicsCompressor();
-        noiseGate.threshold.value = -20; // dB - signals below this are reduced
+        noiseGate.threshold.value = -20;
         noiseGate.knee.value = 10;
         noiseGate.ratio.value = 12;
-        noiseGate.attack.value = 0.003; // Fast attack (3ms)
-        noiseGate.release.value = 0.25; // Medium release (250ms)
-        console.log('Created noise gate');
+        noiseGate.attack.value = 0.003;
+        noiseGate.release.value = 0.25;
 
-        // Create a low-pass filter for smoothing
+        // Low-pass filter
         const smoothingFilter = audioContext.createBiquadFilter();
         smoothingFilter.type = 'lowpass';
-        smoothingFilter.frequency.value = 3450; // Cut off frequencies above 3.6kHz
-        smoothingFilter.Q.value = 0.55; // Smoothness factor
+        smoothingFilter.frequency.value = 3450;
+        smoothingFilter.Q.value = 0.55;
 
-        // Create a high-pass filter for hum removal
+        // High-pass filter
         const highPassFilter = audioContext.createBiquadFilter();
         highPassFilter.type = 'highpass';
-        highPassFilter.frequency.value = 105; // Cut off frequencies below 105Hz (removes hum/rumble)
+        highPassFilter.frequency.value = 105;
         highPassFilter.Q.value = 0.7;
 
-        // Create destination for processed audio
         mediaStreamDestination = audioContext.createMediaStreamDestination();
 
-        // Connect logic
         sourceNode.connect(noiseGate);
         noiseGate.connect(scriptProcessor);
         scriptProcessor.connect(highPassFilter);
         highPassFilter.connect(smoothingFilter);
         smoothingFilter.connect(mediaStreamDestination);
 
-
-        // Store the processed stream
         processedStream = mediaStreamDestination.stream;
-        console.log('Real-time audio processing pipeline created with SoundTouch ScriptProcessor');
+        console.log('Real-time audio processing pipeline created');
     } catch (err) {
         console.error('Failed to setup SoundTouch:', err);
-        // Fallback: connect directly without pitch shifting
         mediaStreamDestination = audioContext.createMediaStreamDestination();
         sourceNode.connect(mediaStreamDestination);
         processedStream = mediaStreamDestination.stream;
@@ -400,72 +440,16 @@ async function setupAudioProcessing(sourceNode) {
 // Update pitch in real-time when slider changes
 function updatePitchShift(newFactor) {
     if (soundTouch) {
-        // SoundTouch uses 'pitch' (factor) directly, or pitchSemitones
-        // The slider gives factor (e.g. 0.5 to 2.0)
-        // Ensure newFactor is not 0 to avoid errors
         const factor = Math.max(0.1, newFactor);
         soundTouch.pitch = factor;
-
         const semitones = 12 * Math.log2(factor);
         console.log(`Updated pitch to ${semitones.toFixed(2)} semitones (factor: ${factor})`);
     }
 }
 
-// Fast Fourier Transform (Cooley-Tukey algorithm)
-function fft(real, imag) {
-    const N = real.length;
-
-    // Bit-reversal permutation
-    let j = 0;
-    for (let i = 0; i < N; i++) {
-        if (j > i) {
-            [real[i], real[j]] = [real[j], real[i]];
-            [imag[i], imag[j]] = [imag[j], imag[i]];
-        }
-        let m = N >> 1;
-        while (m >= 1 && j >= m) {
-            j -= m;
-            m >>= 1;
-        }
-        j += m;
-    }
-
-    // Cooley-Tukey FFT
-    for (let len = 2; len <= N; len *= 2) {
-        const angle = -2 * Math.PI / len;
-        const wlen_real = Math.cos(angle);
-        const wlen_imag = Math.sin(angle);
-
-        for (let i = 0; i < N; i += len) {
-            let w_real = 1;
-            let w_imag = 0;
-
-            for (let j = 0; j < len / 2; j++) {
-                const u_real = real[i + j];
-                const u_imag = imag[i + j];
-
-                const v_real = real[i + j + len / 2] * w_real - imag[i + j + len / 2] * w_imag;
-                const v_imag = real[i + j + len / 2] * w_imag + imag[i + j + len / 2] * w_real;
-
-                real[i + j] = u_real + v_real;
-                imag[i + j] = u_imag + v_imag;
-
-                real[i + j + len / 2] = u_real - v_real;
-                imag[i + j + len / 2] = u_imag - v_imag;
-
-                const temp_real = w_real * wlen_real - w_imag * wlen_imag;
-                w_imag = w_real * wlen_imag + w_imag * wlen_real;
-                w_real = temp_real;
-            }
-        }
-    }
-}
-
-
 // Connect remote stream to analyzer
 function connectRemoteStream(stream) {
     if (!audioContext || !stream) return;
-
     const source = audioContext.createMediaStreamSource(stream);
     source.connect(remoteAnalyser);
     console.log('Remote stream connected to FFT analyzer');
@@ -475,13 +459,11 @@ function connectRemoteStream(stream) {
 function renderFFT() {
     animationId = requestAnimationFrame(renderFFT);
 
-    // Draw local stream FFT
     if (localAnalyser) {
         localAnalyser.getByteFrequencyData(localDataArray);
         drawFFT(localCtx, localDataArray, localCanvas.width, localCanvas.height, '#002fffff');
     }
 
-    // Draw remote stream FFT
     if (remoteAnalyser) {
         remoteAnalyser.getByteFrequencyData(remoteDataArray);
         drawFFT(remoteCtx, remoteDataArray, remoteCanvas.width, remoteCanvas.height, '#8000ffff');
@@ -490,7 +472,6 @@ function renderFFT() {
 
 // Draw FFT bars on canvas
 function drawFFT(ctx, dataArray, width, height, color) {
-    // Clear canvas
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
 
@@ -500,15 +481,11 @@ function drawFFT(ctx, dataArray, width, height, color) {
 
     for (let i = 0; i < dataArray.length; i++) {
         barHeight = (dataArray[i] / 255) * height;
-
-        // Create gradient for bars
         const gradient = ctx.createLinearGradient(0, height - barHeight, 0, height);
         gradient.addColorStop(0, color);
-        gradient.addColorStop(1, color); // Add transparency at bottom
-
+        gradient.addColorStop(1, color);
         ctx.fillStyle = gradient;
         ctx.fillRect(x, height - barHeight, barWidth, barHeight);
-
         x += barWidth + 1;
     }
 }

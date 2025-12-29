@@ -13,7 +13,16 @@ mcp/.env
 mcp/node_modules/
 
 node_modules/
+
 webrtc/node_modules/
 webrtc/coturn/
 webrtc/coturn.log
 webrtc/SoundTouchJS/
+webrtc/server.log
+webrtc/favicon.ico
+webrtc/package-lock.json
+webrtc/dist/
+webrtc/sfu/libsrtp-2.7.0/
+webrtc/sfu/libwebsockets/
+webrtc/sfu/janus-gateway/
+webrtc/sfu/usrsctp/

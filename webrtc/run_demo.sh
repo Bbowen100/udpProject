@@ -19,6 +19,10 @@ SERVER_PID=$!
 # Start Vite Build & Serve
 echo "Building client..."
 npm run build
+# Vite watch runs in background
+npm run watch &
+VITE_PID=$!
+echo "Vite Watcher (building to /dist on change) started."
 
 echo "Starting Python HTTP Server..."
 cd dist && python3 -m http.server 8000 &
@@ -31,6 +35,7 @@ cleanup() {
     kill $COTURN_PID 2>/dev/null
     kill $SERVER_PID 2>/dev/null
     kill $PYTHON_PID 2>/dev/null
+    kill $VITE_PID 2>/dev/null
 }
 
 # Trap signals

@@ -37,6 +37,40 @@ async function run() {
     io.on('connection', (socket) => {
         console.log('Client connected:', socket.id);
 
+        // Track resources for this socket to clean up on disconnect
+        socket.data.transports = new Set();
+        socket.data.consumers = new Set();
+        socket.data.producers = new Set();
+
+        socket.on('disconnect', () => {
+            console.log('Client disconnected:', socket.id);
+            // Clean up producers
+            for (const producerId of socket.data.producers) {
+                const producer = producers.get(producerId);
+                if (producer) {
+                    producer.close();
+                    producers.delete(producerId);
+                    socket.broadcast.emit('producerClosed', { producerId });
+                }
+            }
+            // Clean up consumers
+            for (const consumerId of socket.data.consumers) {
+                const consumer = consumers.get(consumerId);
+                if (consumer) {
+                    consumer.close();
+                    consumers.delete(consumerId);
+                }
+            }
+            // Clean up transports
+            for (const transportId of socket.data.transports) {
+                const transport = transports.get(transportId);
+                if (transport) {
+                    transport.close();
+                    transports.delete(transportId);
+                }
+            }
+        });
+
         socket.on('getRouterRtpCapabilities', (data, callback) => {
             callback(router.rtpCapabilities);
         });
@@ -50,6 +84,7 @@ async function run() {
                 });
                 producerTransport = transport;
                 transports.set(transport.id, transport);
+                socket.data.transports.add(transport.id); // Track ownership
                 console.log('Producer transport created, iceCandidates:', params.iceCandidates);
 
                 callback(params);
@@ -68,6 +103,7 @@ async function run() {
                 });
                 consumerTransport = transport;
                 transports.set(transport.id, transport);
+                socket.data.transports.add(transport.id); // Track ownership
                 console.log('Consumer transport created, iceCandidates:', params.iceCandidates);
 
                 callback(params);
@@ -92,6 +128,7 @@ async function run() {
             if (transport) {
                 producer = await transport.produce({ kind, rtpParameters });
                 producers.set(producer.id, producer);
+                socket.data.producers.add(producer.id); // Track ownership
 
                 producer.on('transportclose', () => {
                     console.log('Producer transport closed');
@@ -101,6 +138,7 @@ async function run() {
                 producer.on('close', () => {
                     console.log('Producer closed');
                     producers.delete(producer.id);
+                    // socket.data.producers.delete(producer.id); // Optional, handled by disconnect usually
                 });
 
                 console.log('Producer created:', producer.id);
@@ -132,6 +170,7 @@ async function run() {
                 });
 
                 consumers.set(consumer.id, consumer);
+                socket.data.consumers.add(consumer.id); // Track ownership
 
                 consumer.on('transportclose', () => {
                     consumer.close();

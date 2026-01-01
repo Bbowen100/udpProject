@@ -78,7 +78,7 @@ startBtn.onclick = async () => {
         startBtn.disabled = false;
     }
 };
-
+// start capture
 async function startCapture() {
     statusDiv.innerText = 'Requesting microphone...';
     console.log('Requesting microphone...');
@@ -87,8 +87,7 @@ async function startCapture() {
             noiseSuppression: true,
             echoCancellation: true,
             autoGainControl: false
-        },
-        video: false
+        }
     });
     console.log('Microphone access granted');
 
@@ -101,11 +100,6 @@ async function connectToServer() {
     statusDiv.innerText = 'Connecting to server...';
 
     // Connect to Socket.IO path (served by the node server)
-    // Assuming the node server is running on the same host but different port (or proxy)
-    // Based on run_demo.sh, we use `node sfu/mediasoup-server/server.js` which listens on 3000
-    // But the run_demo.sh doesn't expose 3000? 
-    // Wait, the HTTP server is on 8000. The Mediasoup server is on 3000 (from config.js).
-    // We should connect to port 3000.
 
     const url = `${window.location.protocol}//${window.location.hostname}:3000`;
     console.log('Connecting to socket at:', url);
@@ -162,9 +156,7 @@ async function joinRoom() {
         console.log('number of existing producers:', remoteProducerIds.length);
 
         for (const id of remoteProducerIds) {
-            // Don't consume our own producer if we don't want loopback, 
-            // but for now the server sends back all. 
-            // If we want to avoid self-consumption loopback in the UI, we can check:
+            // Don't consume our own producer if we don't want loopback
             if (producer && id === producer.id) continue;
 
             await consume(id);
@@ -181,8 +173,9 @@ async function createSendTransport() {
     console.log('Transport params:', params);
 
     // Add turn servers to iceServers if needed, or use what server sends if it managed it
-    // But here we enforce our local turn
     params.iceServers = iceServers;
+    // But here we enforce our local turn
+    params.iceTransportPolicy = 'relay';
 
     producerTransport = device.createSendTransport(params);
 
@@ -254,10 +247,20 @@ async function produce() {
 }
 
 async function consume(producerId) {
-    // Prevent consuming own producer if we created it (unless we want loopback)
     // For this demo, let's allow loopback to hear ourselves via server
+    // if (producer && producer.id === producerId) return;
 
     const { rtpCapabilities } = device;
+
+    // Hack: Manually add rtcpFeedback to Opus to satisfy server router requirements
+    const opusCodec = rtpCapabilities.codecs.find(c => c.mimeType.toLowerCase() === 'audio/opus');
+    if (opusCodec) {
+        opusCodec.rtcpFeedback = [
+            { type: 'nack', parameter: '' },
+            { type: 'transport-cc', parameter: '' }
+        ];
+    }
+
     const data = await request('consume', {
         transportId: consumerTransport.id,
         producerId,

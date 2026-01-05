@@ -1,10 +1,9 @@
-// SoundTouchJS imports
-import { SoundTouch } from './SoundTouchJS/dist/soundtouch.js';
+
 
 import * as mediasoupClient from 'mediasoup-client';
 import { io } from 'socket.io-client';
 
-let soundTouch;
+let pitchWorkletNode;
 
 const startBtn = document.getElementById('startBtn');
 const statusDiv = document.getElementById('status');
@@ -51,9 +50,13 @@ pitchSlider.addEventListener('input', (event) => {
 });
 
 // Update pitch shift enabled state
+
 pitchToggle.addEventListener('change', (event) => {
     pitchShiftEnabled = event.target.checked;
     console.log('Pitch shift enabled:', pitchShiftEnabled);
+    if (pitchWorkletNode) {
+        pitchWorkletNode.port.postMessage({ type: 'bypass', value: !pitchShiftEnabled });
+    }
 });
 
 // Mediasoup Config with Coturn
@@ -325,6 +328,14 @@ async function initializeAudioAnalysis() {
 
     console.log('Audio analysis initialized');
 
+    try {
+        await audioContext.audioWorklet.addModule(new URL('./pitch-processor.js', import.meta.url));
+        console.log('Pitch processor module loaded');
+    } catch (e) {
+        console.error('Failed to load pitch processor module', e);
+    }
+
+
     // Start rendering loop
     renderFFT();
 }
@@ -346,61 +357,17 @@ async function connectLocalStream() {
 async function setupAudioProcessing(sourceNode) {
 
     try {
-        // Initialize SoundTouch for live processing
-        soundTouch = new SoundTouch();
-        soundTouch.pitch = pitchShiftFactor;
+        // Create AudioWorkletNode
+        pitchWorkletNode = new AudioWorkletNode(audioContext, 'pitch-processor');
 
-        // Create ScriptProcessorNode
-        const bufferSize = 4096;
-        const scriptProcessor = audioContext.createScriptProcessor(bufferSize, 2, 2);
-        const samples = new Float32Array(bufferSize * 2);
-
-        scriptProcessor.onaudioprocess = function (audioProcessingEvent) {
-            const inputBuffer = audioProcessingEvent.inputBuffer;
-            const outputBuffer = audioProcessingEvent.outputBuffer;
-
-            const inputDataL = inputBuffer.getChannelData(0);
-            const inputDataR = inputBuffer.getChannelData(1);
-            const outputDataL = outputBuffer.getChannelData(0);
-            const outputDataR = outputBuffer.getChannelData(1);
-
-            if (!pitchShiftEnabled) {
-                for (let i = 0; i < bufferSize; i++) {
-                    outputDataL[i] = inputDataL[i];
-                    outputDataR[i] = inputDataR[i];
-                }
-                if (soundTouch.inputBuffer.frameCount > 0) {
-                    soundTouch.inputBuffer.clear();
-                }
-                return;
-            }
-
-            for (let i = 0; i < bufferSize; i++) {
-                samples[i * 2] = inputDataL[i];
-                samples[i * 2 + 1] = inputDataR[i];
-            }
-
-            soundTouch.inputBuffer.putSamples(samples, 0, bufferSize);
-            soundTouch.process();
-
-            const framesAvailable = soundTouch.outputBuffer.frameCount;
-            const framesToExtract = Math.min(framesAvailable, bufferSize);
-
-            for (let i = 0; i < bufferSize; i++) {
-                outputDataL[i] = 0;
-                outputDataR[i] = 0;
-            }
-
-            if (framesToExtract > 0) {
-                soundTouch.outputBuffer.receiveSamples(samples, framesToExtract);
-                for (let i = 0; i < framesToExtract; i++) {
-                    outputDataL[i] = samples[i * 2];
-                    outputDataR[i] = samples[i * 2 + 1];
-                }
-            }
+        pitchWorkletNode.onprocessorerror = (err) => {
+            console.error('An error from AudioWorkletProcessor:', err);
         };
 
-        console.log('Created SoundTouch ScriptProcessor');
+        // Initialize pitch
+        pitchWorkletNode.port.postMessage({ type: 'pitch', value: pitchShiftFactor });
+
+        console.log('Created Pitch Worklet Node');
 
         // Noise gate
         const noiseGate = audioContext.createDynamicsCompressor();
@@ -424,16 +391,27 @@ async function setupAudioProcessing(sourceNode) {
 
         mediaStreamDestination = audioContext.createMediaStreamDestination();
 
+        // Connect graph
+        // source -> noiseGate -> pitchWorklet -> highPass -> smoothing -> destination
+
         sourceNode.connect(noiseGate);
-        noiseGate.connect(scriptProcessor);
-        scriptProcessor.connect(highPassFilter);
+
+        // Handling bypass logic? 
+        // Original code had `if (!pitchShiftEnabled)` check inside process loop.
+        // We need to implement bypass or just run it with pitch=1?
+        // SoundTouch with pitch=1 is transparent but computationally non-zero.
+        // But the worklet is always in the graph.
+
+        noiseGate.connect(pitchWorkletNode);
+        pitchWorkletNode.connect(highPassFilter);
+
         highPassFilter.connect(smoothingFilter);
         smoothingFilter.connect(mediaStreamDestination);
 
         processedStream = mediaStreamDestination.stream;
         console.log('Real-time audio processing pipeline created');
     } catch (err) {
-        console.error('Failed to setup SoundTouch:', err);
+        console.error('Failed to setup SoundTouch Worklet:', err);
         mediaStreamDestination = audioContext.createMediaStreamDestination();
         sourceNode.connect(mediaStreamDestination);
         processedStream = mediaStreamDestination.stream;
@@ -441,10 +419,14 @@ async function setupAudioProcessing(sourceNode) {
 }
 
 // Update pitch in real-time when slider changes
+
 function updatePitchShift(newFactor) {
-    if (soundTouch) {
+    if (pitchWorkletNode) {
         const factor = Math.max(0.1, newFactor);
-        soundTouch.pitch = factor;
+
+        // Send message to worklet
+        pitchWorkletNode.port.postMessage({ type: 'pitch', value: factor });
+
         const semitones = 12 * Math.log2(factor);
         console.log(`Updated pitch to ${semitones.toFixed(2)} semitones (factor: ${factor})`);
     }

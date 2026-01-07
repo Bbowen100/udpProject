@@ -147,6 +147,8 @@ class RateTransposer extends AbstractFifoSamplePipe {
     this.slopeCount = 0;
     this.prevSampleL = 0;
     this.prevSampleR = 0;
+    this.lpPrevL = 0;
+    this.lpPrevR = 0;
   }
   clone() {
     const result = new RateTransposer();
@@ -155,6 +157,20 @@ class RateTransposer extends AbstractFifoSamplePipe {
   }
   process() {
     const numFrames = this._inputBuffer.frameCount;
+
+    if (this._rate > 1.0) {
+      const vector = this._inputBuffer.vector;
+      const startIndex = this._inputBuffer.startIndex;
+      const alpha = 1.0 / this._rate;
+      for (let i = 0; i < numFrames; i++) {
+        const index = startIndex + 2 * i;
+        this.lpPrevL += alpha * (vector[index] - this.lpPrevL);
+        vector[index] = this.lpPrevL;
+        this.lpPrevR += alpha * (vector[index + 1] - this.lpPrevR);
+        vector[index + 1] = this.lpPrevR;
+      }
+    }
+
     this._outputBuffer.ensureAdditionalCapacity(numFrames / this._rate + 1);
     const numFramesOutput = this.transpose(numFrames);
     this._inputBuffer.receive();
@@ -681,8 +697,7 @@ const getWebAudioNode = function (context, filter, sourcePositionCallback = noop
     if (framesExtracted === 0) {
       filter.onEnd();
     }
-    let i = 0;
-    for (; i < framesExtracted; i++) {
+    for (let i = 0; i < framesExtracted; i++) {
       left[i] = samples[i * 2];
       right[i] = samples[i * 2 + 1];
     }
